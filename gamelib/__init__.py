@@ -9,6 +9,27 @@ class Tilemap:
     cellh = 32
     def __init__(self, filename):
         self.filename = filename
+        self.tw = self.mapw // self.cellw
+        self.th = self.maph // self.cellh
+
+class TileDesc:
+    cx = 0
+    cy = 0
+    cy0 = 0
+    desc = {}
+    tilemap = None
+    def set_base(self, x, y):
+        self.cx = x
+        self.cy = y
+        self.cy0 = y
+
+    def add_desc(self, name):
+        self.desc[name] = (self.cx, self.cy)
+        self.cx += 1
+
+    def newline(self):
+        self.cy += 1
+        self.cx = self.cy0
 
 class TileBase:
     tilemap = None
@@ -41,6 +62,8 @@ class Animation:
         self.endaction = endaction
 
 class AnimatedTile(TileBase):
+    type_ox = 0
+    type_oy = 0
     def __init__(self):
         self.anims = {}
     def get_anim(self, obj, name, time) -> Animation:
@@ -54,8 +77,8 @@ class AnimatedTile(TileBase):
     def draw(self, obj):
         assert isinstance(obj, AnimatedObject)
         anim = self.get_anim(obj, obj.anim_name, obj.anim_time)
-        self.ox = anim.ox
-        self.oy = anim.oy
+        self.ox = anim.ox + self.type_ox
+        self.oy = anim.oy + self.type_oy
         TileBase.draw(self)
 
         obj.anim_time += 1
@@ -65,8 +88,10 @@ class AnimatedTile(TileBase):
             elif anim.endaction == EndAction.STOP:
                 obj.anim_time -= 1
 
+
 class GroundTile(TileBase):
     pass
+
 
 class CharacterTile(TileBase):
     pass
@@ -84,6 +109,22 @@ class Monster:
     name = 'trashbin'
     x = 0
     y = 0
+
+def load_tiles():
+    tm = Tilemap('data/pics/urban.png')
+    td = TileDesc()
+    td.set_base(0, 0)
+    td.add_desc('standA');td.add_desc('standS'); td.add_desc('standW'); td.add_desc('standD');
+    td.add_desc('doA1');  td.add_desc('goS1');   td.add_desc('goW1');   td.add_desc('goD1');
+    td.add_desc('doA2');  td.add_desc('goS2');   td.add_desc('goW2');   td.add_desc('goD2');
+    td.add_desc('pushA');td.add_desc('pushS'); td.add_desc('pushW'); td.add_desc('pushD');
+    td.add_desc('fallA');td.add_desc('fallS'); td.add_desc('fallW'); td.add_desc('fallD');
+    td.add_desc('deadA');td.add_desc('deadS'); td.add_desc('deadW'); td.add_desc('deadD');
+
+
+class Player(Monster):
+    pass
+
 
 class Cell:
     name = 'floor'
