@@ -110,17 +110,6 @@ class Monster:
     x = 0
     y = 0
 
-def load_tiles():
-    tm = Tilemap('data/pics/urban.png')
-    td = TileDesc()
-    td.set_base(0, 0)
-    td.add_desc('standA');td.add_desc('standS'); td.add_desc('standW'); td.add_desc('standD');
-    td.add_desc('doA1');  td.add_desc('goS1');   td.add_desc('goW1');   td.add_desc('goD1');
-    td.add_desc('doA2');  td.add_desc('goS2');   td.add_desc('goW2');   td.add_desc('goD2');
-    td.add_desc('pushA');td.add_desc('pushS'); td.add_desc('pushW'); td.add_desc('pushD');
-    td.add_desc('fallA');td.add_desc('fallS'); td.add_desc('fallW'); td.add_desc('fallD');
-    td.add_desc('deadA');td.add_desc('deadS'); td.add_desc('deadW'); td.add_desc('deadD');
-
 
 class Player(Monster):
     pass
@@ -165,3 +154,14 @@ class Level:
         for e in self.monsters:
             e.draw()
 
+
+def load_tiles():
+    tm = Tilemap('data/pics/urban.png')
+    td = TileDesc()
+    td.set_base(0, 0)
+    td.add_desc('standA');td.add_desc('standS'); td.add_desc('standW'); td.add_desc('standD');
+    td.add_desc('doA1');  td.add_desc('goS1');   td.add_desc('goW1');   td.add_desc('goD1');
+    td.add_desc('doA2');  td.add_desc('goS2');   td.add_desc('goW2');   td.add_desc('goD2');
+    td.add_desc('pushA');td.add_desc('pushS'); td.add_desc('pushW'); td.add_desc('pushD');
+    td.add_desc('fallA');td.add_desc('fallS'); td.add_desc('fallW'); td.add_desc('fallD');
+    td.add_desc('deadA');td.add_desc('deadS'); td.add_desc('deadW'); td.add_desc('deadD');

@@ -27,6 +27,7 @@ from pygame.display import  *
 
 from gamelib.texture import *
 
+keys_down={}
 class Directions:
     N = (0, -1)
     S = (0, 1)
@@ -190,7 +191,55 @@ class GroundTile:
 
 
 
-player_sprite = UrbanCharacterSprite()
+
+class Player:
+    x = 0
+    y = 0
+
+    def __init__(self):
+        self.player_sprite = UrbanCharacterSprite()
+
+
+    def draw(self):
+        glPushMatrix()
+        glTranslatef(self.x, self.y, 0)
+        self.player_sprite.anim.time += 1
+        self.player_sprite.draw()
+        glPopMatrix()
+
+    def process(self):
+        walking = False
+        if keys_down.get(pygame.K_w):
+            walking = True
+            player.y -= 3
+            player.player_sprite.anim.pose = Pose.WALKING
+            player.player_sprite.direction = Directions.N
+        if keys_down.get(pygame.K_s):
+            walking = True
+            player.y += 3
+            player.player_sprite.anim.pose = Pose.WALKING
+            player.player_sprite.direction = Directions.S
+        if keys_down.get(pygame.K_a):
+            walking = True
+            player.x -= 3
+            player.player_sprite.anim.pose = Pose.WALKING
+            player.player_sprite.direction = Directions.W
+        if keys_down.get(pygame.K_d):
+            walking = True
+            player.x += 3
+            player.player_sprite.anim.pose = Pose.WALKING
+            player.player_sprite.direction = Directions.E
+        if keys_down.get(pygame.K_e):
+            player.player_sprite.anim.pose = Pose.ACTING
+            player.player_sprite.anim.time = 0
+        if keys_down.get(pygame.K_c):
+            player.player_sprite.anim.pose = Pose.FALLING
+            player.player_sprite.anim.time = 0
+
+        if not walking and player.player_sprite.anim.pose == Pose.WALKING:
+            player.player_sprite.anim.pose = Pose.IDLE
+
+player = Player()
 
 def draw():
     glClearColor(0.56, 0.66, 0.79, 1.0)
@@ -217,8 +266,8 @@ def draw():
             tm.draw(tile, a, b)
 
     set_texture('data/pics/urban.png')
-    player_sprite.anim.time += 1
-    player_sprite.draw()
+    player.process()
+    player.draw()
 
 
 def main():
@@ -230,28 +279,20 @@ def main():
                             pygame.DOUBLEBUF)
     while True:
         for event in pygame.event.get():
+
+            print(event)
             if event.type == pygame.QUIT:
                 break
             if event.type == pygame.KEYDOWN:
                 if event.unicode == 'q':
                     sys.exit()
 
-            if event.type == pygame.KEYDOWN:
-                if event.unicode and event.unicode in 'wsad':
-                    player_sprite.anim.pose = Pose.WALKING
-                    player_sprite.direction = {
-                        'w' : Directions.N,
-                        's': Directions.S,
-                        'a': Directions.W,
-                        'd': Directions.E,
-                    }[event.unicode]
-                if event.unicode == 'e':
-                    player_sprite.anim.pose = Pose.ACTING
-                if event.unicode == 'c':
-                    player_sprite.anim.pose = Pose.FALLING
-                    player_sprite.anim.time = 0
+            if event.type == pygame.KEYUP:
+                keys_down[event.key] = False
 
-            print(event)
+            if event.type == pygame.KEYDOWN:
+                keys_down[event.key] = True
+
         draw()
         pygame.display.flip()
 
