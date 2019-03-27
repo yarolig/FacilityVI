@@ -25,38 +25,7 @@ from pygame.display import  *
 0xC6655A 0.77, 0.39, 0.35
 '''
 
-textures = {}
-
-def load_texture(filename):
-    surface = pygame.image.load(filename)
-    surface = pygame.transform.flip(surface, False, True)
-
-    data = pygame.image.tostring(surface, "RGBA", 1)
-
-    width = surface.get_width()
-    height = surface.get_height()
-    id = glGenTextures(1)
-    glBindTexture(GL_TEXTURE_2D, id)
-    glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE)
-    #glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE)
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA,
-        GL_UNSIGNED_BYTE, data)
-    print (id,width,height)
-    return id
-
-
-def get_texture(filename):
-    if filename in textures:
-        return textures[filename]
-    textures[filename] = load_texture(filename)
-    return textures[filename]
-
-def set_texture(filename):
-    t = get_texture(filename)
-    glEnable(GL_TEXTURE_2D)
-    glBindTexture(GL_TEXTURE_2D, t)
+from gamelib.texture import *
 
 class Directions:
     N = (0, -1)
@@ -77,6 +46,8 @@ class Animation:
 class CharacterSprite:
     mapw = 128
     maph = 256
+    tw = 32
+    th = 32
     def __init__(self):
         self.direction = Directions.N
         self.anim = Animation()
@@ -120,8 +91,8 @@ class CharacterSprite:
         ty = ty / float(self.maph)
 
         w, h = 16*4, 16*4
-        tw = 16.0 / float(self.mapw)
-        th = 16.0 / float(self.maph)
+        tw = self.tw / float(self.mapw)
+        th = self.th / float(self.maph)
 
         #tx, ty = 0, 0
         #tw, th = 1,1 #64.0 / 128.0, 64.0 / 256.0
@@ -142,17 +113,19 @@ class CharacterSprite:
         glEnd()
 
 class UrbanCharacterSprite(CharacterSprite):
-    mapw = 256
-    maph = 256
+    mapw = 512
+    maph = 512
+    tw = 32
+    th = 32
     def offset_for_direction(self, dir):
         if dir == Directions.W:
             return (0, 0)
         if dir == Directions.S:
-            return (16, 0)
-        if dir == Directions.N:
             return (32, 0)
+        if dir == Directions.N:
+            return (64, 0)
         if dir == Directions.E:
-            return (48, 0)
+            return (96, 0)
 
     def offset_for_anim(self, anim):
         assert isinstance(anim, Animation)
@@ -162,36 +135,38 @@ class UrbanCharacterSprite(CharacterSprite):
             return (0,0)
         if anim.pose == Pose.WALKING:
             if anim.time // 15 % 2 == 0:
-               return (0, 16)
-            return (0, 32)
+               return (0, 32)
+            return (0, 64)
         if anim.pose == Pose.ACTING:
             if anim.time // 30 % 2 == 0:
-               return (0,48)
+               return (0,96)
             return (0,0)
         if anim.pose == Pose.FALLING:
             if anim.time < 10:
-               return (0,64)
-            return (0,80)
+               return (0,128)
+            return (0,160)
 
 
 class Tilemap:
     mapw = 512
     maph = 512
+    tw = 16
+    th = 16
     def __init__(self):
         pass
     def draw(self, tile, px ,py):
         tx = tile.ox
         ty = tile.oy
-        tw = 16
-        th = 16
+        tw = self.tw
+        th = self.th
         w = 16*4
         h = 16*4
 
         tx = tx / float(self.mapw)
         ty = ty / float(self.maph)
 
-        tw = 16.0 / float(self.mapw)
-        th = 16.0 / float(self.maph)
+        tw /= float(self.mapw)
+        th /= float(self.maph)
 
         glBegin(GL_QUADS)
         glColor4f(1.0, 1.0, 1.0, 1.0)
