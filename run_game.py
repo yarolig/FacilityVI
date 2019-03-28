@@ -9,6 +9,8 @@ import pygame.mixer
 import pygame.image
 import pygame.freetype
 
+import gamelib
+
 import os
 import sys
 
@@ -240,6 +242,11 @@ class Player:
             player.player_sprite.anim.pose = Pose.IDLE
 
 player = Player()
+level = gamelib.Level(None)
+
+def init():
+    level.load('data/facility.json')
+
 
 def draw():
     glClearColor(0.56, 0.66, 0.79, 1.0)
@@ -277,6 +284,7 @@ def main():
                             pygame.OPENGL |
                             pygame.RESIZABLE |
                             pygame.DOUBLEBUF)
+    init()
     while True:
         for event in pygame.event.get():
 

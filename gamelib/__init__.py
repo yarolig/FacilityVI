@@ -1,16 +1,22 @@
 
+import json
 
 
+from OpenGL.GL import *
+from OpenGL.GLU import *
 
 class Tilemap:
     mapw = 512
     maph = 512
     cellw = 32
     cellh = 32
+    scale = 2
     def __init__(self, filename):
         self.filename = filename
         self.tw = self.mapw // self.cellw
         self.th = self.maph // self.cellh
+        self.desc = None
+
 
 class TileDesc:
     cx = 0
@@ -32,16 +38,33 @@ class TileDesc:
         self.cx = self.cy0
 
 class TileBase:
-    tilemap = None
     name = ''
-    def __init__(self):
+    tilemap = Tilemap('')
+    ox = 0
+    oy = 0
+    def __init__(self, tilemap):
         self.pos_in_tilemap = (0, 0)
+        #self.tilemap = tilemap
 
     def get_pos(self):
         return self.pos_in_tilemap
 
     def draw(self):
-        pass
+        tx = self.ox
+        ty = self.oy
+
+        tx = tx / float(self.tilemap.mapw)
+        ty = ty / float(self.tilemap.maph)
+
+        w, h = self.tilemap.tw * self.tilemap.scale, self.tilemap.th * self.tilemap.scale,
+        tw = self.tilemap.tw
+        th = self.tilemap.th
+        glBegin(GL_QUADS)
+        glTexCoord2f(tx,    ty);     glVertex2f(0, 0)
+        glTexCoord2f(tx+tw, ty);     glVertex2f(w, 0)
+        glTexCoord2f(tx+tw, ty+th);  glVertex2f(w, h)
+        glTexCoord2f(tx,    ty+th);  glVertex2f(0, h)
+        glEnd()
 
 class AnimatedObject:
     anim_time = 0
@@ -117,6 +140,11 @@ class Player(Monster):
 
 class Cell:
     name = 'floor'
+    idx = 0
+    can_walk = True
+    can_fly = True
+    door_sign = '\0'
+
 
 class CellRef:
     def __init__(self, cell, x, y, level):
@@ -130,11 +158,12 @@ class CellRef:
 class Level:
     w = 16
     h = 16
-    def __init__(self):
+    def __init__(self, tileset):
         self.cells = [Cell() for i in range(self.w * self.h)]
         self.monsters = []
         self.items = []
         self.effects = []
+        self.tileset = tileset
 
     def enum_cells(self):
         for y in range(self.h):
@@ -153,7 +182,24 @@ class Level:
             e.draw()
         for e in self.monsters:
             e.draw()
-
+    def load(self, filename):
+        js = json.loads(open('data/facility.json').read())
+        self.w = int(js['layers'][0]['width'])
+        self.h = int(js['layers'][0]['height'])
+        self.cells = [Cell() for i in range(self.w * self.h)]
+        for e in range(len(js['layers'][0]['data'])):
+            idx = int(js['layers'][0]['data'][e])
+            x = e % self.w
+            y = e // self.w
+            self.set_cell_for_idx(self.cell(x, y), idx)
+    def set_cell_for_idx(self, cell, idx):
+        cell.idx = idx
+        if idx == 0:
+            return
+        elif idx == 31:
+            cell.can_walk = True
+        elif idx == 45:
+            cell.can_walk = True
 
 def load_tiles():
     tm = Tilemap('data/pics/urban.png')
