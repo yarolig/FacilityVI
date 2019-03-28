@@ -17,16 +17,6 @@ import sys
 from OpenGL.GL import *
 from OpenGL.GLU import *
 from pygame.display import  *
-
-
-'''
-0x91AACC
-0x325E99 0.19, 0.36, 0.59
-0xCFFCFF 0.80, 0.98, 0.80
-0xFFAB8F 1.0, 0.66, 0.55
-0xC6655A 0.77, 0.39, 0.35
-'''
-
 from gamelib.texture import *
 
 keys_down={}
@@ -191,17 +181,11 @@ class GroundTile:
     oy = 48+16
 
 
-
-
-
 class Player:
     x = 0
     y = 0
-
     def __init__(self):
         self.player_sprite = UrbanCharacterSprite()
-
-
     def draw(self):
         glPushMatrix()
         glTranslatef(self.x, self.y, 0)
@@ -242,11 +226,6 @@ class Player:
             player.player_sprite.anim.pose = Pose.IDLE
 
 player = Player()
-level = gamelib.Level(None)
-
-def init():
-    level.load('data/facility.json')
-
 
 def draw():
     glClearColor(0.56, 0.66, 0.79, 1.0)
@@ -260,8 +239,6 @@ def draw():
 
     glEnable(GL_BLEND)
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-
-    #set_texture('data/pics/worker-sheet_default.png')
 
     set_texture('data/pics/urban/Tilemap/tilemap_packed.png')
     tm = Tilemap()
@@ -284,7 +261,6 @@ def main():
                             pygame.OPENGL |
                             pygame.RESIZABLE |
                             pygame.DOUBLEBUF)
-    init()
     while True:
         for event in pygame.event.get():
 
@@ -300,7 +276,6 @@ def main():
 
             if event.type == pygame.KEYDOWN:
                 keys_down[event.key] = True
-
         draw()
         pygame.display.flip()
 
