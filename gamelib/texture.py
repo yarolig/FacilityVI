@@ -31,7 +31,19 @@ def get_texture(filename):
     textures[filename] = load_texture(filename)
     return textures[filename]
 
+
+current_texture_id = -1
 def set_texture(filename):
+    global current_texture_id
     t = get_texture(filename)
+    if current_texture_id == t:
+        return
     glEnable(GL_TEXTURE_2D)
     glBindTexture(GL_TEXTURE_2D, t)
+    current_texture_id = t
+
+def unset_texture():
+    global current_texture_id
+    glDisable(GL_TEXTURE_2D)
+    glBindTexture(GL_TEXTURE_2D, 0)
+    current_texture_id = 0
