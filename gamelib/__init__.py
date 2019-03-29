@@ -93,6 +93,7 @@ class EndAction:
     NONE = 0
     LOOP = 1
     STOP = 2
+    IDLE = 3
 
 class AnimationPhase:
     end = EndAction.NONE
@@ -110,6 +111,9 @@ class Animated:
 class CharacterAnimation:
     def __init__(self, tilemap):
         assert  isinstance(tilemap, Tilemap)
+        hitT1 = 5
+        hitT2 = 20
+        hitT3 = 40
         self.phases = [
             AnimationPhase('a', 0, 15, tilemap.no_from_xy(0, 0), end=EndAction.LOOP),
             AnimationPhase('s', 0, 15, tilemap.no_from_xy(1, 0), end=EndAction.LOOP),
@@ -125,6 +129,21 @@ class CharacterAnimation:
             AnimationPhase('walks', 15, 30, tilemap.no_from_xy(1, 2), end=EndAction.LOOP),
             AnimationPhase('walkw', 15, 30, tilemap.no_from_xy(2, 2), end=EndAction.LOOP),
             AnimationPhase('walkd', 15, 30, tilemap.no_from_xy(3, 2), end=EndAction.LOOP),
+
+            AnimationPhase('hita', 0, hitT1, tilemap.no_from_xy(0, 6)),
+            AnimationPhase('hits', 0, hitT1, tilemap.no_from_xy(1, 6)),
+            AnimationPhase('hitw', 0, hitT1, tilemap.no_from_xy(2, 6)),
+            AnimationPhase('hitd', 0, hitT1, tilemap.no_from_xy(3, 6)),
+
+            AnimationPhase('hita', hitT1, hitT2, tilemap.no_from_xy(0, 3), end=EndAction.NONE),
+            AnimationPhase('hits', hitT1, hitT2, tilemap.no_from_xy(1, 3), end=EndAction.NONE),
+            AnimationPhase('hitw', hitT1, hitT2, tilemap.no_from_xy(2, 3), end=EndAction.NONE),
+            AnimationPhase('hitd', hitT1, hitT2, tilemap.no_from_xy(3, 3), end=EndAction.NONE),
+
+            AnimationPhase('hita', hitT2, hitT3, tilemap.no_from_xy(0, 0), end=EndAction.IDLE),
+            AnimationPhase('hits', hitT2, hitT3, tilemap.no_from_xy(1, 0), end=EndAction.IDLE),
+            AnimationPhase('hitw', hitT2, hitT3, tilemap.no_from_xy(2, 0), end=EndAction.IDLE),
+            AnimationPhase('hitd', hitT2, hitT3, tilemap.no_from_xy(3, 0), end=EndAction.IDLE),
         ]
     def anim_tile(self, animation_state):
         cap = None
@@ -141,6 +160,9 @@ class CharacterAnimation:
                 animation_state.anim_time = 0
             elif cap.end == EndAction.LOOP:
                 animation_state.anim_time -= 1
+            elif cap.end == EndAction.IDLE:
+                animation_state.anim_time = 0
+                animation_state.anim_name = animation_state.anim_name[-1]
         return cap.tile
 
 class BotAnimation(CharacterAnimation):
@@ -239,6 +261,7 @@ class Monster(Animated):
     hp = 10
     dx = 0
     dy = 0
+    attack = False
     isplayer = False
     animation = None
     sense_range = 32 * 5
@@ -264,12 +287,16 @@ class Monster(Animated):
 
         if dx > 0:
             self.anim_name = 'walkd'
+            self.anim_time = self.anim_time % 30
         elif dx < 0:
             self.anim_name = 'walka'
+            self.anim_time = self.anim_time % 30
         elif dy > 0:
             self.anim_name = 'walks'
+            self.anim_time = self.anim_time % 30
         elif dy < 0:
             self.anim_name = 'walkw'
+            self.anim_time = self.anim_time % 30
         else:
             self.anim_name = self.anim_name.replace('walk', '')
             self.anim_time = 0
@@ -344,30 +371,38 @@ class Player(Monster):
         walking = False
         dx, dy = 0, 0
 
-        if keys_down.get(pygame.K_f):
-            firing = True
-            dy = -3
-
         if keys_down.get(pygame.K_w):
             walking = True
             dy = -self.speed
             self.anim_name = 'walkw'
+            self.anim_time = self.anim_time % 30
         if keys_down.get(pygame.K_s):
             walking = True
             dy = self.speed
             self.anim_name = 'walks'
+            self.anim_time = self.anim_time % 30
         if keys_down.get(pygame.K_a):
             walking = True
             dx = -self.speed
             self.anim_name = 'walka'
+            self.anim_time = self.anim_time % 30
         if keys_down.get(pygame.K_d):
             walking = True
             dx = self.speed
             self.anim_name = 'walkd'
+            self.anim_time = self.anim_time % 30
 
         if not walking and self.anim_name.startswith('walk'):
             self.anim_name = self.anim_name.replace('walk', '')
             self.anim_time = 0
+
+        if keys_down.get(pygame.K_f):
+            self.attack = True
+            if self.anim_name.startswith('walk') or len(self.anim_name) == 1:
+                direction = self.anim_name[-1]
+                self.anim_time = 0
+                self.anim_name = 'hit'+direction
+
         self.dx = dx
         self.dy = dy
 
