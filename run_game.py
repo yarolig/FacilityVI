@@ -34,7 +34,7 @@ def main():
     while True:
         for event in pygame.event.get():
 
-            print(event)
+            #print(event)
             if event.type == pygame.QUIT:
                 return
             if event.type == pygame.KEYDOWN:
