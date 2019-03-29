@@ -5,6 +5,8 @@ from .keys import *
 
 from OpenGL.GL import *
 from OpenGL.GLU import *
+import math
+import random
 
 class Cell:
     ground = None
@@ -225,59 +227,67 @@ def rect_intersect(x,y,w,h,xx,yy,ww,hh):
     yoverlap = (yy <= y <= yy + hh) or (y <= yy <= y + h)
     return xoverlap and yoverlap
 
+def sign(i):
+    if i > 0: return 1
+    if i < 0: return -1
+    return 0
 
-class Player(Animated):
+class Monster(Animated):
     x = 0
     y = 0
+    h = 32
+    hp = 10
     dx = 0
     dy = 0
-    old_door_letter = ':'
-    def __init__(self):
-        self.tile = Tile()
+    isplayer = False
+    animation = None
+    sense_range = 32 * 5
+    stop_range = 20
+    speed = 1
 
-
-    def process_input(self):
+    def ai(self, game):
         walking = False
-        firing = False
         dx, dy = 0, 0
+        if self.hp <= 0:
+            return
 
-        if keys_down.get(pygame.K_f):
-            firing = True
-            dy = -3
+        p = game.player
+        dist_to_player = ((p.x - self.x) ** 2 + (p.y - self.y) ** 2) ** 0.5
+        dist_to_player = int(dist_to_player)
+        if self.stop_range <= dist_to_player <= self.sense_range:
+            dx = sign(p.x - self.x) * self.speed
+            dy = sign(p.y - self.y) * self.speed
+            if math.fabs(p.x - self.x) < self.speed:
+                dx = 0
+            if math.fabs(p.y - self.y) < self.speed:
+                dy = 0
 
-        if keys_down.get(pygame.K_w):
-            walking = True
-            dy = -3
-            self.anim_name = 'walkw'
-        if keys_down.get(pygame.K_s):
-            walking = True
-            dy = 3
+        if dy > 0:
             self.anim_name = 'walks'
-        if keys_down.get(pygame.K_a):
-            walking = True
-            dx = -3
-            self.anim_name = 'walka'
-        if keys_down.get(pygame.K_d):
-            walking = True
-            dx = 3
+        elif dy < 0:
+            self.anim_name = 'walkw'
+        elif dx > 0:
             self.anim_name = 'walkd'
-
-        if not walking and self.anim_name.startswith('walk'):
+        elif dx < 0:
+            self.anim_name = 'walka'
+        else:
             self.anim_name = self.anim_name.replace('walk', '')
             self.anim_time = 0
         self.dx = dx
         self.dy = dy
 
+
     def process(self, game):
         assert isinstance(game, Game)
         player = self
-        oldpos = player.x, player.y
+        oldpos = self.x, self.y
         dx = self.dx
         dy = self.dy
+
         def can_go(x, y):
-            for dx, dy in [(0, 0),  (-10, 0),  (10, 0),
-                           (0, -15),(-10, -15),(10,-15),]:
-                cell = game.get_cell_for_pxpy(x+dx, y+dy)
+            for dx, dy in [(0, 0), (-10, 0), (10, 0),
+                           (0, -15), (-10, -15), (10, -15), ]:
+                cell = game.get_cell_for_pxpy(x + dx, y + dy)
                 gnd = cell.ground
                 fur = cell.furniture
                 assert isinstance(gnd, GroundTile)
@@ -288,20 +298,24 @@ class Player(Animated):
                 if gnd.door_letter != '\0':
                     break
             for m in game.monsters:
-                if rect_intersect(x,y,32,32,m.x,m.y,32,m.h):
-                    if not rect_intersect(self.x,self.y,32,32,m.x,m.y,32,m.h):
+                if m is self:
+                    continue
+                if m.hp <= 0:
+                    continue
+                if rect_intersect(x, y, 32, self.h, m.x, m.y, 32, m.h):
+                    if not rect_intersect(self.x, self.y, 32, self.h, m.x, m.y, 32, m.h):
                         return False
             return True
 
-        if can_go(player.x + dx, player.y + dy):
-            player.x, player.y = player.x + dx, player.y + dy
-        elif can_go(player.x + dx, player.y):
-            player.x, player.y = player.x + dx, player.y
-        elif can_go(player.x, player.y + dy):
-            player.x, player.y = player.x, player.y + dy
+        if can_go(self.x + dx, self.y + dy):
+            self.x, self.y = self.x + dx, self.y + dy
+        elif can_go(self.x + dx, self.y):
+            self.x, self.y = self.x + dx, self.y
+        elif can_go(self.x, self.y + dy):
+            self.x, self.y = self.x, self.y + dy
 
         cell = game.get_cell_for_pxpy(self.x, self.y)
-        #print (cell, cell.ground)
+        # print (cell, cell.ground)
 
         gnd = cell.ground
         fur = cell.furniture
@@ -311,25 +325,53 @@ class Player(Animated):
 
         if fur and not fur.can_go:
             self.x, self.y = oldpos
-
-        if gnd.door_letter not in '\0\n':
+        if self.isplayer and gnd.door_letter not in '\0\n':
             game.change_room(self.old_door_letter, gnd.door_letter)
 
 
-
-class Monster(Animated):
-    x = 0
-    y = 0
+class Player(Monster):
     h = 32
-    hp = 10
-    animation = None
-
-
+    speed = 2.5
+    isplayer = True
+    old_door_letter = ':'
+    def __init__(self):
+        self.tile = Tile()
 
     def ai(self, game):
         pass
-    def process(self, game):
-        pass
+
+    def process_input(self):
+        walking = False
+        dx, dy = 0, 0
+
+        if keys_down.get(pygame.K_f):
+            firing = True
+            dy = -3
+
+        if keys_down.get(pygame.K_w):
+            walking = True
+            dy = -self.speed
+            self.anim_name = 'walkw'
+        if keys_down.get(pygame.K_s):
+            walking = True
+            dy = self.speed
+            self.anim_name = 'walks'
+        if keys_down.get(pygame.K_a):
+            walking = True
+            dx = -self.speed
+            self.anim_name = 'walka'
+        if keys_down.get(pygame.K_d):
+            walking = True
+            dx = self.speed
+            self.anim_name = 'walkd'
+
+        if not walking and self.anim_name.startswith('walk'):
+            self.anim_name = self.anim_name.replace('walk', '')
+            self.anim_time = 0
+        self.dx = dx
+        self.dy = dy
+
+
 
 class Game:
     def __init__(self):
@@ -341,7 +383,7 @@ class Game:
         self.furniture_tiles_by_no = {}
         self.rooms = {}
         self.current_room = Room()
-        self.monsters = []
+        self.monsters = [self.player]
         def add_tile(name, x, y,
                      can_go=True,
                      can_fly=True,
@@ -419,14 +461,20 @@ class Game:
             m.animation = self.cleaner_animation
             m.hp = 20
             m.h = 10
+            m.speed = 1.2
+            m.sense_range = 32 * 10
         elif gid == 69: # bin
             m.animation = self.bin_animation
             m.hp = 20
             m.h = 10
+            m.speed = 0.7
+            m.sense_range = 32 * 6
         elif gid == 161: # bot
             m.animation = self.bot_animation
             m.h = 20
             m.hp = 20
+            m.speed = 0.5
+            m.sense_range = 32 * 5
         elif gid == 53: # dead bin
             m.animation = self.bin_animation
             m.h = 10
@@ -547,8 +595,8 @@ class Game:
         self.player.old_door_letter = new
 
     def get_cell_for_pxpy(self, px ,py):
-        ii = (px + 15) // 32
-        jj = (py + 30) // 32
+        ii = int((px + 15) // 32)
+        jj = int((py + 30) // 32)
         cell = self.level.cells[ii + jj * self.level.w]
         #print(ii, jj, cell)
         return cell
@@ -581,9 +629,15 @@ class Game:
                     self.tilemap.draw(cell.furniture,
                                   a, b)
 
+
         self.player.process_input()
         self.player.process(self)
-
+        for m in self.monsters:
+            assert isinstance(m, Monster)
+            if m.isplayer:
+                continue
+            m.ai(self)
+            m.process(self)
         #print (self.player.x - self.current_room.x,
         #       self.player.y - self.current_room.y)
         for c in self.level.cells:
@@ -591,6 +645,8 @@ class Game:
         c = self.get_cell_for_pxpy(self.player.x, self.player.y)
         c.marked = True
         for m in self.monsters:
+            if m.isplayer:
+                continue
             self.tilemap.draw(m.animation.anim_tile(m),
                               (m.x - self.current_room.x) * 2,
                               (m.y - self.current_room.y) * 2)
