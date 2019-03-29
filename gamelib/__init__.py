@@ -262,14 +262,14 @@ class Monster(Animated):
             if math.fabs(p.y - self.y) < self.speed:
                 dy = 0
 
-        if dy > 0:
-            self.anim_name = 'walks'
-        elif dy < 0:
-            self.anim_name = 'walkw'
-        elif dx > 0:
+        if dx > 0:
             self.anim_name = 'walkd'
         elif dx < 0:
             self.anim_name = 'walka'
+        elif dy > 0:
+            self.anim_name = 'walks'
+        elif dy < 0:
+            self.anim_name = 'walkw'
         else:
             self.anim_name = self.anim_name.replace('walk', '')
             self.anim_time = 0
@@ -438,12 +438,16 @@ class Game:
         add_tile('grass', 13, 1)
 
         add_furniture_tile('sofa', 11, 4, can_go=False)
+        add_furniture_tile('terminal', 10, 4, can_go=False)
         add_furniture_tile('tables', 12, 4, can_go=False)
+        add_furniture_tile('umbrella', 13, 5, can_go=True)
         add_furniture_tile('shelve', 12, 5, can_go=False)
         add_furniture_tile('tabler', 13, 4, can_go=False)
         add_furniture_tile('tree', 14, 4,  can_go=False)
         add_furniture_tile('waste', 15, 0,  can_go=False)
         add_furniture_tile('tank', 11, 0,  can_go=False)
+        add_furniture_tile('grate', 13, 0,  can_go=False)
+        add_furniture_tile('fridge', 11, 6,  can_go=False)
 
     def init(self):
         self.player_animation = CharacterAnimation(self.tilemap)
