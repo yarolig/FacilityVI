@@ -36,10 +36,10 @@ def main():
 
             print(event)
             if event.type == pygame.QUIT:
-                break
+                return
             if event.type == pygame.KEYDOWN:
                 if event.unicode == 'q':
-                    sys.exit()
+                    return #sys.exit()
 
             if event.type == pygame.KEYUP:
                 keys_down[event.key] = False

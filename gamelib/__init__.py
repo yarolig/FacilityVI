@@ -85,6 +85,15 @@ class UrbanCharacterSprite:
     def draw(self):
         pass
 
+class Room:
+    x = 0
+    y = 0
+    name = ''
+    ex = 0
+    ey = 0
+    def __str__(self):
+        return  "Room({} {}:{} {}:{})".format(self.name, self.x, self.y, self.ex, self.ey)
+
 class Player:
     x = 0
     y = 0
@@ -132,7 +141,8 @@ class Game:
         self.tilemap = Tilemap('data/pics/urban.png')
         self.ground_tiles = {}
         self.ground_tiles_by_no = {}
-
+        self.rooms = {}
+        self.current_room = Room()
         def add_tile(name, x, y, can_go=True, can_fly=True, on_stand=None):
             t = GroundTile()
             t.no = self.tilemap.no_from_xy(x, y)
@@ -145,10 +155,17 @@ class Game:
         add_tile('lift', 6, 0)
         add_tile('fire_door', 6, 1)
         add_tile('escape_door', 6, 2)
-        add_tile('wooden_door', 6, 2)
-        add_tile('yellow_floor', 2, 14)
-        add_tile('green_floor', 1, 14)
-        add_tile('blue_floor', 2, 12)
+        add_tile('wooden_door', 6, 3)
+        add_tile('yellow_floor', 14, 2)
+        add_tile('yellow_floor2', 15, 2)
+        add_tile('green_floor', 15, 1)
+        add_tile('tile_floor', 15, 1)
+        add_tile('blue_floor', 12, 2)
+        add_tile('textured_floor', 15, 3)
+        add_tile('gray_floor', 14, 1)
+        add_tile('kitchen_furniture', 13, 6)
+        add_tile('asphalt', 9, 0)
+        add_tile('gray_floor2', 14, 0)
 
     def init(self):
         self.load('')
@@ -160,10 +177,38 @@ class Game:
         self.level.h = int(js['layers'][0]['height'])
         self.level.cells = [Cell() for i in range(self.level.w * self.level.h)]
         for e in range(len(js['layers'][0]['data'])):
-            idx = int(js['layers'][0]['data'][e])
+            idx = int(js['layers'][0]['data'][e]) -1
             x = e % self.level.w
             y = e // self.level.w
-            self.level.cells[e].ground = self.ground_tiles_by_no.get(e, self.ground_tiles['blue_floor'])
+            gnd = self.ground_tiles_by_no.get(idx)
+            if not gnd and idx != -1:
+                print('bad gnd: {} ({} {})'.format(idx, idx % 16, idx // 16))
+            self.level.cells[e].ground = gnd or self.ground_tiles['blue_floor']
+
+        def get_room(name):
+            if name in self.rooms:
+                return self.rooms[name]
+            r = Room()
+            r.name = name
+            self.rooms[name] = r
+            return self.rooms[name]
+
+        for o in js['layers'][3]['objects']:
+            if o['type'] == 'room':
+                r = get_room(o['name'])
+                r.x = int(o['x']) // 32 * 32
+                r.y = int(o['y']) // 32 * 32
+            if o['type'] == 'start':
+                r = get_room(o['name'])
+                r.ex = int(o['x']) // 32 * 32
+                r.ey = int(o['y']) // 32 * 32
+        self.current_room = self.rooms['entrance']
+        for r in self.rooms:
+            print(r + " = " + str(self.rooms[r]))
+        for r in self.rooms.values():
+            if r.name and (r.ex == 0 and r.ey == 0):
+                raise Exception('no start for room ' + str(r))
+
     def draw(self):
         glClearColor(0.56, 0.66, 0.79, 1.0)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
@@ -182,7 +227,9 @@ class Game:
             for j in range(10):
                 a = i * 16 * 4
                 b = j * 16 * 4
-                cell = self.level.cells[i + j * self.level.w]
+                ii = i + self.current_room.x // 32
+                jj = j + self.current_room.y // 32
+                cell = self.level.cells[ii + jj * self.level.w]
                 self.tilemap.draw(cell.ground,
                                   a, b)
 
