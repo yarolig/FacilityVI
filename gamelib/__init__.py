@@ -186,20 +186,20 @@ class BinAnimation(CharacterAnimation):
     def __init__(self, tilemap):
         assert  isinstance(tilemap, Tilemap)
         self.phases = [
-            AnimationPhase('a', 0, 15, tilemap.no_from_xy(4, 4), end=EndAction.LOOP),
-            AnimationPhase('s', 0, 15, tilemap.no_from_xy(4, 4), end=EndAction.LOOP),
-            AnimationPhase('w', 0, 15, tilemap.no_from_xy(4, 4), end=EndAction.LOOP),
-            AnimationPhase('d', 0, 15, tilemap.no_from_xy(4, 4), end=EndAction.LOOP),
+            AnimationPhase('a', 0, 15, tilemap.no_from_xy(4, 3), end=EndAction.LOOP),
+            AnimationPhase('s', 0, 15, tilemap.no_from_xy(4, 3), end=EndAction.LOOP),
+            AnimationPhase('w', 0, 15, tilemap.no_from_xy(4, 3), end=EndAction.LOOP),
+            AnimationPhase('d', 0, 15, tilemap.no_from_xy(4, 3), end=EndAction.LOOP),
 
-            AnimationPhase('walka', 0, 15, tilemap.no_from_xy(4, 4)),
-            AnimationPhase('walks', 0, 15, tilemap.no_from_xy(4, 4)),
-            AnimationPhase('walkw', 0, 15, tilemap.no_from_xy(4, 4)),
-            AnimationPhase('walkd', 0, 15, tilemap.no_from_xy(4, 4)),
+            AnimationPhase('walka', 0, 15, tilemap.no_from_xy(4, 3)),
+            AnimationPhase('walks', 0, 15, tilemap.no_from_xy(4, 3)),
+            AnimationPhase('walkw', 0, 15, tilemap.no_from_xy(4, 3)),
+            AnimationPhase('walkd', 0, 15, tilemap.no_from_xy(4, 3)),
 
-            AnimationPhase('walka', 15, 30, tilemap.no_from_xy(4, 4), end=EndAction.LOOP),
-            AnimationPhase('walks', 15, 30, tilemap.no_from_xy(4, 4), end=EndAction.LOOP),
-            AnimationPhase('walkw', 15, 30, tilemap.no_from_xy(4, 4), end=EndAction.LOOP),
-            AnimationPhase('walkd', 15, 30, tilemap.no_from_xy(4, 4), end=EndAction.LOOP),
+            AnimationPhase('walka', 15, 30, tilemap.no_from_xy(4, 3), end=EndAction.LOOP),
+            AnimationPhase('walks', 15, 30, tilemap.no_from_xy(4, 3), end=EndAction.LOOP),
+            AnimationPhase('walkw', 15, 30, tilemap.no_from_xy(4, 3), end=EndAction.LOOP),
+            AnimationPhase('walkd', 15, 30, tilemap.no_from_xy(4, 3), end=EndAction.LOOP),
         ]
 
 
@@ -219,19 +219,26 @@ class Room:
     def __str__(self):
         return  "Room({} {}:{} {}:{})".format(self.name, self.x, self.y, self.ex, self.ey)
 
+
+def rect_intersect(x,y,w,h,xx,yy,ww,hh):
+    xoverlap = (xx <= x <= xx + ww) or (x <= xx <= x + w)
+    yoverlap = (yy <= y <= yy + hh) or (y <= yy <= y + h)
+    return xoverlap and yoverlap
+
+
 class Player(Animated):
     x = 0
     y = 0
+    dx = 0
+    dy = 0
     old_door_letter = ':'
     def __init__(self):
         self.tile = Tile()
 
-    def process(self, game):
-        assert isinstance(game, Game)
-        player = self
+
+    def process_input(self):
         walking = False
         firing = False
-        oldpos = player.x, player.y
         dx, dy = 0, 0
 
         if keys_down.get(pygame.K_f):
@@ -242,29 +249,32 @@ class Player(Animated):
             walking = True
             dy = -3
             self.anim_name = 'walkw'
-            #player.player_sprite.anim.pose = Pose.WALKING
-            #player.player_sprite.direction = Directions.N
         if keys_down.get(pygame.K_s):
             walking = True
             dy = 3
             self.anim_name = 'walks'
-            #player.player_sprite.anim.pose = Pose.WALKING
-            #player.player_sprite.direction = Directions.S
         if keys_down.get(pygame.K_a):
             walking = True
             dx = -3
             self.anim_name = 'walka'
-            #player.player_sprite.anim.pose = Pose.WALKING
-            #player.player_sprite.direction = Directions.W
         if keys_down.get(pygame.K_d):
             walking = True
             dx = 3
             self.anim_name = 'walkd'
-            #player.player_sprite.anim.pose = Pose.WALKING
-            #player.player_sprite.direction = Directions.E
 
+        if not walking and self.anim_name.startswith('walk'):
+            self.anim_name = self.anim_name.replace('walk', '')
+            self.anim_time = 0
+        self.dx = dx
+        self.dy = dy
+
+    def process(self, game):
+        assert isinstance(game, Game)
+        player = self
+        oldpos = player.x, player.y
+        dx = self.dx
+        dy = self.dy
         def can_go(x, y):
-
             for dx, dy in [(0, 0),  (-10, 0),  (10, 0),
                            (0, -15),(-10, -15),(10,-15),]:
                 cell = game.get_cell_for_pxpy(x+dx, y+dy)
@@ -277,7 +287,10 @@ class Player(Animated):
                     return False
                 if gnd.door_letter != '\0':
                     break
-
+            for m in game.monsters:
+                if rect_intersect(x,y,32,32,m.x,m.y,32,m.h):
+                    if not rect_intersect(self.x,self.y,32,32,m.x,m.y,32,m.h):
+                        return False
             return True
 
         if can_go(player.x + dx, player.y + dy):
@@ -302,24 +315,21 @@ class Player(Animated):
         if gnd.door_letter not in '\0\n':
             game.change_room(self.old_door_letter, gnd.door_letter)
 
-        if keys_down.get(pygame.K_e):
-            #player.player_sprite.anim.pose = Pose.ACTING
-            #player.player_sprite.anim.time = 0
-            pass
-        if keys_down.get(pygame.K_c):
-            #player.player_sprite.anim.pose = Pose.FALLING
-            #player.player_sprite.anim.time = 0
-            pass
-        if not walking and player.anim_name.startswith('walk'):
-            player.anim_name = player.anim_name.replace('walk','')
-            player.anim_time = 0
 
 
 class Monster(Animated):
     x = 0
     y = 0
+    h = 32
     hp = 10
     animation = None
+
+
+
+    def ai(self, game):
+        pass
+    def process(self, game):
+        pass
 
 class Game:
     def __init__(self):
@@ -394,7 +404,7 @@ class Game:
         add_furniture_tile('tank', 11, 0,  can_go=False)
 
     def init(self):
-        self.player_animation = CleanerAnimation(self.tilemap)
+        self.player_animation = CharacterAnimation(self.tilemap)
         self.bot_animation = BotAnimation(self.tilemap)
         self.bin_animation = BinAnimation(self.tilemap)
         self.cleaner_animation = CleanerAnimation(self.tilemap)
@@ -408,14 +418,18 @@ class Game:
         if gid == 5: # cleaner
             m.animation = self.cleaner_animation
             m.hp = 20
+            m.h = 10
         elif gid == 69: # bin
             m.animation = self.bin_animation
             m.hp = 20
+            m.h = 10
         elif gid == 161: # bot
             m.animation = self.bot_animation
+            m.h = 20
             m.hp = 20
         elif gid == 53: # dead bin
             m.animation = self.bin_animation
+            m.h = 10
             m.hp = 0
         else:
 
@@ -467,7 +481,9 @@ class Game:
                 r.ex = int(o['x']) // 32 * 32
                 r.ey = int(o['y']) // 32 * 32
             if 'gid' in o:
-                m = self.create_monster(int(o['x']), int(o['y']), int(o['gid']))
+                m = self.create_monster(int(o['x']),
+                                        int(o['y']) - 32,
+                                        int(o['gid']))
                 self.monsters.append(m)
         start_room = self.rooms['entrance']
         self.current_room = start_room
@@ -494,7 +510,7 @@ class Game:
         'mhhikm ig  ',  # e |
         'h   A      ',  # i |
         '3Ch Bm   f ',  # o | OLD
-        'h    3E    ',  # m |
+        'hh   3E    ',  # m |
         'h 3  Dl    ',  # n |
         '  m l     W',  # q
         '  m i  W   ',  # w
@@ -565,20 +581,21 @@ class Game:
                     self.tilemap.draw(cell.furniture,
                                   a, b)
 
+        self.player.process_input()
         self.player.process(self)
+
         #print (self.player.x - self.current_room.x,
         #       self.player.y - self.current_room.y)
         for c in self.level.cells:
             c.marked = False
         c = self.get_cell_for_pxpy(self.player.x, self.player.y)
         c.marked = True
-        self.tilemap.draw(self.player_animation.anim_tile(self.player),
-                          (self.player.x - self.current_room.x)*2,
-                           (self.player.y - self.current_room.y)*2)
-
         for m in self.monsters:
             self.tilemap.draw(m.animation.anim_tile(m),
                               (m.x - self.current_room.x) * 2,
                               (m.y - self.current_room.y) * 2)
+        self.tilemap.draw(self.player_animation.anim_tile(self.player),
+                          (self.player.x - self.current_room.x) * 2,
+                          (self.player.y - self.current_room.y) * 2)
 
         self.tilemap.end_draw()
