@@ -7,7 +7,8 @@ from OpenGL.GL import *
 from OpenGL.GLU import *
 
 class Cell:
-    ground = 0
+    ground = None
+    furniture = None
     marked = False
 
 class Level:
@@ -83,7 +84,7 @@ class GroundTile(Tile):
 class FurnitureTile(Tile):
     can_go = True
     cat_fly = True
-   
+
 
 class UrbanCharacterSprite:
     def __init__(self):
@@ -113,33 +114,58 @@ class Player:
         player = self
         walking = False
         oldpos = player.x, player.y
-
+        dx, dy = 0, 0
         if keys_down.get(pygame.K_w):
             walking = True
-            player.y -= 3
+            dy = -3
             #player.player_sprite.anim.pose = Pose.WALKING
             #player.player_sprite.direction = Directions.N
         if keys_down.get(pygame.K_s):
             walking = True
-            player.y += 3
+            dy = 3
             #player.player_sprite.anim.pose = Pose.WALKING
             #player.player_sprite.direction = Directions.S
         if keys_down.get(pygame.K_a):
             walking = True
-            player.x -= 3
+            dx = -3
             #player.player_sprite.anim.pose = Pose.WALKING
             #player.player_sprite.direction = Directions.W
         if keys_down.get(pygame.K_d):
             walking = True
-            player.x += 3
+            dx = 3
             #player.player_sprite.anim.pose = Pose.WALKING
             #player.player_sprite.direction = Directions.E
+
+        def can_go(x, y):
+            cell = game.get_cell_for_pxpy(x, y)
+            gnd = cell.ground
+            fur = cell.furniture
+            assert isinstance(gnd, GroundTile)
+            if not gnd.can_go:
+                return False
+            if fur and not fur.can_go:
+                return False
+            return True
+
+        if can_go(player.x + dx, player.y + dy):
+            player.x, player.y = player.x + dx, player.y + dy
+        elif can_go(player.x + dx, player.y):
+            player.x, player.y = player.x + dx, player.y
+        elif can_go(player.x, player.y + dy):
+            player.x, player.y = player.x, player.y + dy
+
         cell = game.get_cell_for_pxpy(self.x, self.y)
         #print (cell, cell.ground)
+
         gnd = cell.ground
+        fur = cell.furniture
         assert isinstance(gnd, GroundTile)
         if not gnd.can_go:
             self.x, self.y = oldpos
+
+        if fur and not fur.can_go:
+            self.x, self.y = oldpos
+
         if gnd.door_letter not in '\0\n':
             game.change_room(self.old_door_letter, gnd.door_letter)
 
@@ -161,6 +187,8 @@ class Game:
         self.tilemap = Tilemap('data/pics/urban.png')
         self.ground_tiles = {}
         self.ground_tiles_by_no = {}
+        self.furniture_tiles = {}
+        self.furniture_tiles_by_no = {}
         self.rooms = {}
         self.current_room = Room()
         def add_tile(name, x, y,
@@ -176,6 +204,19 @@ class Game:
             t.door_letter = door_letter
             self.ground_tiles[name] = t
             self.ground_tiles_by_no[t.no] = t
+        def add_furniture_tile(name, x, y,
+                     can_go=True,
+                     can_fly=True,
+                     on_stand=None,
+                     door_letter='\0'):
+            t = FurnitureTile()
+            t.no = self.tilemap.no_from_xy(x, y)
+            t.name = name
+            t.can_go = can_go
+            t.can_fly = can_fly
+            t.door_letter = door_letter
+            self.furniture_tiles[name] = t
+            self.furniture_tiles_by_no[t.no] = t
 
         self.level = Level()
         add_tile('wall', 8, 0, can_go=False, can_fly=False)
@@ -203,6 +244,13 @@ class Game:
         add_tile('gray_floor2', 14, 0)
         add_tile('grass', 13, 1)
 
+        add_furniture_tile('sofa', 11, 4, can_go=False)
+        add_furniture_tile('tables', 12, 4, can_go=False)
+        add_furniture_tile('tabler', 13, 4, can_go=False)
+        add_furniture_tile('tree', 14, 4,  can_go=False)
+        add_furniture_tile('waste', 15, 0,  can_go=False)
+        add_furniture_tile('tank', 11, 0,  can_go=False)
+
     def init(self):
         self.load('')
 
@@ -220,6 +268,15 @@ class Game:
             if not gnd and idx != -1:
                 print('bad gnd: {} ({} {})'.format(idx, idx % 16, idx // 16))
             self.level.cells[e].ground = gnd or self.ground_tiles['blue_floor']
+
+        for e in range(len(js['layers'][1]['data'])):
+            idx = int(js['layers'][1]['data'][e]) -1
+            x = e % self.level.w
+            y = e // self.level.w
+            fur = self.furniture_tiles_by_no.get(idx)
+            if not fur and idx != -1:
+                print('bad fur: {} ({} {})'.format(idx, idx % 16, idx // 16))
+            self.level.cells[e].furniture = fur or None
 
         def get_room(name):
             if name in self.rooms:
@@ -260,14 +317,14 @@ class Game:
         #:aeiomnqwf! <--NEW
         'hhmiAD qw  ',  # :
         '3hhiA      ',  # a
-        'mhhik  ig  ',  # e |
+        'mhhikm ig  ',  # e |
         'h   A      ',  # i |
-        ' Ch B    f ',  # o | OLD
+        '3Ch Bm   f ',  # o | OLD
         'h    3E    ',  # m |
         'h 3  Dl    ',  # n |
-        '  m       W',  # q
+        '  m l     W',  # q
         '  m i  W   ',  # w
-        '  k      i ',  # f
+        '  k h    i ',  # f
         '           ',  # !
         ]
         short_names = {
@@ -287,7 +344,7 @@ class Game:
              "C" : "office3",
              "q" : "quality",
              "w" : "warehouse",
-             "W" : "WIN",
+             "W" : "vi",
         }
         new_room_sname = transits[oi][ni]
         new_room_name = short_names.get(new_room_sname, 'entrance')
@@ -329,6 +386,9 @@ class Game:
                 cell = self.level.cells[ii + jj * self.level.w]
                 if not cell.marked:
                     self.tilemap.draw(cell.ground,
+                                  a, b)
+                if cell.furniture:
+                    self.tilemap.draw(cell.furniture,
                                   a, b)
 
         self.player.process(self)
