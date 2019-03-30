@@ -473,7 +473,7 @@ class Player(Monster):
     speed = 2.5
     attack_damage = 1
     isplayer = True
-    old_door_letter = ':'
+    old_door_letter = 'q'
 
     have_umbrella = False
     have_bread = False
@@ -489,27 +489,29 @@ class Player(Monster):
         walking = False
         dx, dy = 0, 0
         attacking = self.anim_name.startswith('hit')
+        cant_walk = attacking or self.stun_time > 0
+
         kw = keys_down.get(pygame.K_w) or keys_down.get(pygame.K_k) or keys_down.get(pygame.K_UP)
         ks = keys_down.get(pygame.K_s) or keys_down.get(pygame.K_j) or keys_down.get(pygame.K_DOWN)
         ka = keys_down.get(pygame.K_a) or keys_down.get(pygame.K_h) or keys_down.get(pygame.K_LEFT)
         kd = keys_down.get(pygame.K_d) or keys_down.get(pygame.K_l) or keys_down.get(pygame.K_RIGHT)
         kf = keys_down.get(pygame.K_f) or keys_down.get(pygame.K_SPACE)
-        if kw and not attacking:
+        if kw and not cant_walk:
             walking = True
             dy = -self.speed
             self.anim_name = 'walkw'
             self.anim_time = self.anim_time % 30
-        if ks and not attacking:
+        if ks and not cant_walk:
             walking = True
             dy = self.speed
             self.anim_name = 'walks'
             self.anim_time = self.anim_time % 30
-        if ka and not attacking:
+        if ka and not cant_walk:
             walking = True
             dx = -self.speed
             self.anim_name = 'walka'
             self.anim_time = self.anim_time % 30
-        if kd and not attacking:
+        if kd and not cant_walk:
             walking = True
             dx = self.speed
             self.anim_name = 'walkd'
@@ -722,12 +724,13 @@ class Game:
         # =======================================
         start_room = self.rooms['entrance']
         start_room = self.rooms['kitchen']
+        start_room = self.rooms['vi']
 
         self.current_room = start_room
         self.player.x = start_room.ex
         self.player.y = start_room.ey
-        for r in self.rooms:
-            print(r + " = " + str(self.rooms[r]))
+        #for r in self.rooms:
+        #    print(r + " = " + str(self.rooms[r]))
         for r in self.rooms.values():
             if r.name and (r.ex == 0 and r.ey == 0):
                 raise Exception('no start for room ' + str(r))
@@ -744,10 +747,10 @@ class Game:
         #:aeiomnqwf! <--NEW
         'hhmiAD qw  ',  # :
         '3hhiA      ',  # a
-        'mhhikm mg  ',  # e |
+        'mhhikE mg  ',  # e |
         'h   A      ',  # i |
         '3Ch Bm   f ',  # o | OLD
-        'hg   gE    ',  # m |
+        'hh   gE    ',  # m |
         'h 3  Dl    ',  # n |
         'R m l     W',  # q
         '  m i  W   ',  # w
@@ -777,10 +780,9 @@ class Game:
         new_room_sname = transits[oi][ni]
         new_room_name = short_names.get(new_room_sname, 'entrance')
 
-        print('change_room', repr(old), repr(new), '->', new_room_name)
+        print('change_room', repr(old), repr(new), '->', new_room_name,
+              'visited rooms', len(self.visited_rooms.keys()))
         self.visited_rooms[new_room_name] = True
-        print('visited rooms' , len(self.visited_rooms.keys()))
-
         start_room = self.rooms[new_room_name]
 
         transfer = self.current_room.name + '->' +new_room_name
@@ -790,6 +792,7 @@ class Game:
         self.player.old_door_letter = new
 
         transfer_phrases = {
+            'vi->entrance': "These doors are one way.",
             'entrance->hall': "I can't go back here. Strange.",
             'hall->hall': "Stupid lift!",
             'hall->information': "",
@@ -802,8 +805,10 @@ class Game:
             'quality->vi' : "Yes! I'm free now!",
             'warehouse->vi': "Yes! Done!",
             'office2->office3': "Am I lost?",
+            'entrance->entrance': "I have a sense of deja vu.",
             'maintenance->basement': "A-a-aa!! Damned lift!",
             'construction1->garden': "A-a-aa!! Damned construction!",
+            'construction2->garden': "A-a-aa!! Damned construction!",
         }
         transfer_phrases2 = {
             'hall->information': "Welcome to Facility VI.\n"
@@ -821,8 +826,10 @@ class Game:
         transfer_accidents = {
         #    '' -> 'fall',
         }
-        print (repr(transfer))
-        if transfer in ['maintenance->basement', 'construction1->garden']:
+        #print (repr(transfer))
+        if transfer in ['maintenance->basement',
+                        'construction1->garden',
+                        'construction2->garden']:
             #print('Dangerous path!!')
             self.player.anim_time = 0
             self.player.anim_name = 'falls'
@@ -831,7 +838,7 @@ class Game:
             self.player.stun_speedy = 0
 
         if transfer not in self.transfers:
-            print(transfer)
+            #print(transfer)
             t = transfer_phrases.get(transfer, '')
             if t:
                 print('say', t)
@@ -872,7 +879,9 @@ class Game:
             return self.player.talked_with_toaster == 2
         elif no == 3:
             fall1 = 'maintenance->basement' in self.transfers
-            fall2 = 'construction1->garden' in self.transfers
+            fall2 = ('construction1->garden' in self.transfers or
+                     'construction2->garden' in self.transfers)
+
             return fall1 and fall2
 
     def win_condition_debug(self, no):
@@ -1034,7 +1043,7 @@ class Game:
         if keys_down.get(pygame.K_F2):
             self.current_title = 'about'
 
-        if self.current_room.name == 'vi':
+        if self.current_room.name == 'vi' and len(self.visited_rooms) > 1:
             self.win_timeout -= 1
             if self.win_timeout <= 0:
                 self.current_title = 'end'

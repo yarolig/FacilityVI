@@ -38,8 +38,8 @@ def main():
             if event.type == pygame.QUIT:
                 return
             if event.type == pygame.KEYDOWN:
-                if event.unicode == 'q':
-                    return #sys.exit()
+                if event.key == pygame.K_ESCAPE:
+                    return
 
             if event.type == pygame.KEYUP:
                 keys_down[event.key] = False
