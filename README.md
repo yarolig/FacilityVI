@@ -26,7 +26,7 @@ Othewise open a terminal / console and "cd" to the game directory and run:
 
 #### HOW TO PLAY THE GAME:  
 Press WASD, HJKL or arrows to move.  
-You may need to attack things. Use F or Ctrl. But it will not help too much.
+You may need to attack things. Use F or Space. But it will not help too much.
 F1 shows controls, F2 shows authors. 
 Esc - exit from game.
 
