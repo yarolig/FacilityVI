@@ -11,6 +11,9 @@ You might need to install some of these before running the game:
   PyGame:                http://www.pygame.org/  
   PyOpenGL:              http://pyopengl.sf.net/  
 
+Install it with command  
+`   python3 -m pip install -r requirements.txt
+`
 
 #### RUNNING THE GAME:
 
@@ -18,11 +21,20 @@ On Windows or Mac OS X, locate the "run_game.pyw" file and double-click it.
 
 Othewise open a terminal / console and "cd" to the game directory and run:
 
-  python3 run_game.py
-
+`  python3 run_game.py
+`
 
 #### HOW TO PLAY THE GAME:  
-There is no game yet.
+Press WASD, HJKL or arrows to move.  
+You may need to attack things. Use F or Ctrl. But it will not help too much.
+F1 shows controls, F2 shows authors. 
+Esc - exit from game.
+
+Instruction to exit this wacility seems simple:
+  1) go to a fire ESCAPE door
+  2) take a LIFT to waste treatment area
+  3) go to the QUALITY control room
+  4) leave through the door with a YELLOW SIGN!
 
 
 ## LICENSE:  

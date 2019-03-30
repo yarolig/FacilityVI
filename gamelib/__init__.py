@@ -411,22 +411,27 @@ class Player(Monster):
         walking = False
         dx, dy = 0, 0
         attacking = self.anim_name.startswith('hit')
-        if keys_down.get(pygame.K_w) and not attacking:
+        kw = keys_down.get(pygame.K_w) or keys_down.get(pygame.K_k) or keys_down.get(pygame.K_UP)
+        ks = keys_down.get(pygame.K_s) or keys_down.get(pygame.K_j) or keys_down.get(pygame.K_DOWN)
+        ka = keys_down.get(pygame.K_a) or keys_down.get(pygame.K_h) or keys_down.get(pygame.K_LEFT)
+        kd = keys_down.get(pygame.K_d) or keys_down.get(pygame.K_l) or keys_down.get(pygame.K_RIGHT)
+        kf = keys_down.get(pygame.K_f) or keys_down.get(pygame.K_SPACE)
+        if kw and not attacking:
             walking = True
             dy = -self.speed
             self.anim_name = 'walkw'
             self.anim_time = self.anim_time % 30
-        if keys_down.get(pygame.K_s) and not attacking:
+        if ks and not attacking:
             walking = True
             dy = self.speed
             self.anim_name = 'walks'
             self.anim_time = self.anim_time % 30
-        if keys_down.get(pygame.K_a) and not attacking:
+        if ka and not attacking:
             walking = True
             dx = -self.speed
             self.anim_name = 'walka'
             self.anim_time = self.anim_time % 30
-        if keys_down.get(pygame.K_d) and not attacking:
+        if kd and not attacking:
             walking = True
             dx = self.speed
             self.anim_name = 'walkd'
@@ -436,7 +441,7 @@ class Player(Monster):
             self.anim_name = self.anim_name.replace('walk', '')
             self.anim_time = 0
 
-        if keys_down.get(pygame.K_f):
+        if kf:
             self.attack = True
             if self.anim_name.startswith('walk') or len(self.anim_name) == 1:
                 direction = self.anim_name[-1]
@@ -858,10 +863,11 @@ class Game:
             draw_menu_line('Controls')
             draw_menu_line('')
             draw_menu_line('WSAD, HJKL, Arrows - move')
-            draw_menu_line('K, Ctrl - attack (do not expect too much)')
+            draw_menu_line('K, Space - attack (do not expect too much)')
             draw_menu_line('M - toggle music')
             draw_menu_line('N - toggle sound')
             draw_menu_line('F1 - show controls')
+            draw_menu_line('F2 - about game')
             draw_menu_line('Esc - exit')
             draw_menu_line('')
             draw_menu_line('Press Enter to continue.')
