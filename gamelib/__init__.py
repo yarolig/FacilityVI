@@ -998,8 +998,6 @@ class Game:
             draw_menu_line('pyweek27 solo entry by Alexander Izmailov')
             draw_menu_line('http://www.pyweek.org/27/')
             draw_menu_line('')
-            draw_menu_line('Code is distributed under the terms of MIT License')
-            draw_menu_line('')
             draw_menu_line('Tileset is based on RPG Urban Pack from kenney.nl')
             draw_menu_line('')
             draw_menu_line('Music by Parallel Park')
