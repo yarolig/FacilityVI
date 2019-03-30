@@ -3,10 +3,14 @@ import json
 from .texture import *
 from .keys import *
 
+
 from OpenGL.GL import *
 from OpenGL.GLU import *
+import pygame
+import pygame.freetype
 import math
 import random
+from .balloon import *
 
 class Cell:
     ground = None
@@ -17,6 +21,8 @@ class Level:
     w = 0
     h = 0
     cells = None
+
+
 
 
 
@@ -108,12 +114,14 @@ class Animated:
     anim_name = 'd'
     anim_time = 0
 
+
+
 class CharacterAnimation:
     def __init__(self, tilemap):
         assert  isinstance(tilemap, Tilemap)
         hitT1 = 5
         hitT2 = 20
-        hitT3 = 40
+        hitT3 = 25
         self.phases = [
             AnimationPhase('a', 0, 15, tilemap.no_from_xy(0, 0), end=EndAction.LOOP),
             AnimationPhase('s', 0, 15, tilemap.no_from_xy(1, 0), end=EndAction.LOOP),
@@ -261,6 +269,13 @@ class Monster(Animated):
     hp = 10
     dx = 0
     dy = 0
+    attack_range = 32
+    attack_stun_time = 20
+    attack_stun_speed = 2
+    attack_damage = 0
+    stun_time = 0
+    stun_speedx = 0
+    stun_speedy = 0
     attack = False
     isplayer = False
     animation = None
@@ -310,6 +325,15 @@ class Monster(Animated):
         oldpos = self.x, self.y
         dx = self.dx
         dy = self.dy
+        if self.stun_time > 0:
+            self.stun_time -= 1
+            dx = self.stun_speedx
+            dy = self.stun_speedy
+            if self.stun_time == 0:
+                dx = 0
+                dy = 0
+                self.stun_speedx = 0
+                self.stun_speedy = 0
 
         def can_go(x, y):
             for dx, dy in [(0, 0), (-10, 0), (10, 0),
@@ -344,6 +368,22 @@ class Monster(Animated):
         cell = game.get_cell_for_pxpy(self.x, self.y)
         # print (cell, cell.ground)
 
+        if self.anim_name.startswith('hit') and self.anim_time == 5:
+            l2d={'w':(0,-1), 's':(0,1), 'a':(-1,0), 'd':(1,0), }
+            dir = l2d[self.anim_name[-1]]
+            x = self.x + dir[0]*self.attack_range
+            y = self.y + dir[1]*self.attack_range
+            for m in game.monsters:
+                if m is self:
+                    continue
+                if m.hp <= 0:
+                    continue
+                if rect_intersect(x, y, 32, self.h, m.x, m.y, 32, m.h):
+                    # hit monster
+                    m.stun_time = self.attack_stun_time
+                    m.stun_speedx = dir[0]*self.attack_stun_speed
+                    m.stun_speedy = dir[1]*self.attack_stun_speed
+
         gnd = cell.ground
         fur = cell.furniture
         assert isinstance(gnd, GroundTile)
@@ -370,23 +410,23 @@ class Player(Monster):
     def process_input(self):
         walking = False
         dx, dy = 0, 0
-
-        if keys_down.get(pygame.K_w):
+        attacking = self.anim_name.startswith('hit')
+        if keys_down.get(pygame.K_w) and not attacking:
             walking = True
             dy = -self.speed
             self.anim_name = 'walkw'
             self.anim_time = self.anim_time % 30
-        if keys_down.get(pygame.K_s):
+        if keys_down.get(pygame.K_s) and not attacking:
             walking = True
             dy = self.speed
             self.anim_name = 'walks'
             self.anim_time = self.anim_time % 30
-        if keys_down.get(pygame.K_a):
+        if keys_down.get(pygame.K_a) and not attacking:
             walking = True
             dx = -self.speed
             self.anim_name = 'walka'
             self.anim_time = self.anim_time % 30
-        if keys_down.get(pygame.K_d):
+        if keys_down.get(pygame.K_d) and not attacking:
             walking = True
             dx = self.speed
             self.anim_name = 'walkd'
@@ -407,6 +447,20 @@ class Player(Monster):
         self.dy = dy
 
 
+class Phrase:
+    x = 0
+    y = 0
+    ttl = 60 * 5
+    text = "It's INSANE!"
+    color = None
+    def draw(self, game):
+        if self.ttl > 0:
+            balloon.draw_text(self.text,
+                (self.x - game.current_room.x) * 2,
+                (self.y - game.current_room.y) * 2,
+                              bgcolor=self.color)
+
+            self.ttl -= 1
 
 class Game:
     def __init__(self):
@@ -419,6 +473,8 @@ class Game:
         self.rooms = {}
         self.current_room = Room()
         self.monsters = [self.player]
+        self.phrases = []
+        self.transfers = {}
         def add_tile(name, x, y,
                      can_go=True,
                      can_fly=True,
@@ -491,6 +547,7 @@ class Game:
         self.cleaner_animation = CleanerAnimation(self.tilemap)
 
         self.load('')
+        balloon.init()
 
     def create_monster(self, x, y, gid):
         m = Monster()
@@ -501,7 +558,7 @@ class Game:
             m.hp = 20
             m.h = 10
             m.speed = 1.2
-            m.sense_range = 32 * 10
+            m.sense_range = 32 * 5
         elif gid == 69: # bin
             m.animation = self.bin_animation
             m.hp = 20
@@ -594,18 +651,19 @@ class Game:
         #:aeiomnqwf! <--NEW
         'hhmiAD qw  ',  # :
         '3hhiA      ',  # a
-        'mhhikm ig  ',  # e |
+        'mhhikm mg  ',  # e |
         'h   A      ',  # i |
         '3Ch Bm   f ',  # o | OLD
-        'hh   3E    ',  # m |
+        'hg   3E    ',  # m |
         'h 3  Dl    ',  # n |
-        '  m l     W',  # q
+        'R m l     W',  # q
         '  m i  W   ',  # w
         '  k h    i ',  # f
         '           ',  # !
         ]
         short_names = {
              "3" : "3rd",
+             "R" : "basement",
              "D" : "construction1",
              "E" : "construction2",
              "e" : "entrance",
@@ -627,11 +685,61 @@ class Game:
         new_room_name = short_names.get(new_room_sname, 'entrance')
 
         print('change_room', repr(old), repr(new), '->', new_room_name)
+
         start_room = self.rooms[new_room_name]
+
+        transfer = self.current_room.name + '->' +new_room_name
         self.current_room = start_room
         self.player.x = start_room.ex
         self.player.y = start_room.ey
         self.player.old_door_letter = new
+
+        transfer_phrases = {
+            'entrance->hall': "I can't go back here. Strange.",
+            'hall->hall': "Stupid lift!",
+            'hall->information': "",
+            'hall->maintenance': "Looks like a waste treatment area!",
+            'maintenance->maintenance': "Whoops!",
+            '3rd->3rd': 'What?',
+            '3rd->construction1' : 'These rooms is under construction.',
+            #'maintenance->maintenance': "Whoops!",
+            'fridge->information': "This is INSANE!! I've been in the kithen! WHY AM I HERE?",
+            'quality->vi' : "Yes! I'm free now!",
+            'warehouse->vi': "Yes! Done!",
+            'office2->office3': "Am I lost?",
+            'maintenance->basement': "A-a-aa!! Damned lift!",
+        }
+        transfer_phrases2 = {
+            'hall->information': "Welcome to Facility VI.\n"
+                                 "To exit  1) go to fire ESCAPE door\n"
+                                 "2) take LIFT to waste treatment area\n"
+                                 "3) go to the QUALITY control room\n"
+                                 "4) leave through the door with YELLOW SIGN!\n",
+
+            'fridge->information': "It is very logical indeed.\n"
+                                   "Nothing depends on room where you been.\n"
+                                   "Only doors matter.\n"
+                                   "The last two doors you passed.\n"
+
+        }
+        transfer_accidents = {
+        #    '' -> 'fall',
+        }
+
+        if transfer not in self.transfers:
+            print(transfer)
+            t = transfer_phrases.get(transfer, '')
+            if t:
+                print('say', t)
+                self.say(t, self.player.x + 32, self.player.y, 3 * 60)
+            t2 = transfer_phrases2.get(transfer, '')
+            if t2:
+                print('say2', t2)
+                yy = -118
+                for tt in t2.split('\n'):
+                    self.say(tt, self.player.x, self.player.y + yy, 10 * 60,)
+                    yy += 14
+        self.transfers[transfer] = True
 
     def get_cell_for_pxpy(self, px ,py):
         ii = int((px + 15) // 32)
@@ -639,6 +747,16 @@ class Game:
         cell = self.level.cells[ii + jj * self.level.w]
         #print(ii, jj, cell)
         return cell
+
+    def say(self, text, x, y, ttl, color=None):
+        p = Phrase()
+        p.text = text
+        p.x = x
+        p.y = y
+        p.ttl = ttl
+        p.color = color
+        self.phrases.append(p)
+        self.phrases = [p for p in self.phrases if p.ttl > 0]
 
     def draw(self):
         glClearColor(0.56, 0.66, 0.79, 1.0)
@@ -694,3 +812,8 @@ class Game:
                           (self.player.y - self.current_room.y) * 2)
 
         self.tilemap.end_draw()
+        unset_texture()
+        for p in self.phrases:
+            assert  isinstance(p, Phrase)
+            p.draw(self)
+        #balloon.draw_text("This is INSANE!", 100, 100)
