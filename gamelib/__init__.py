@@ -90,10 +90,13 @@ class GroundTile(Tile):
     can_go = True
     cat_fly = True
     door_letter = '\0'
+    name = ''
 
 class FurnitureTile(Tile):
+    name = ''
     can_go = True
     cat_fly = True
+    picked_up = False
 
 class EndAction:
     NONE = 0
@@ -122,6 +125,10 @@ class CharacterAnimation:
         hitT1 = 5
         hitT2 = 20
         hitT3 = 25
+        deadT1 = 20
+        deadT2 = 40
+        fallT1 = 120
+
         self.phases = [
             AnimationPhase('a', 0, 15, tilemap.no_from_xy(0, 0), end=EndAction.LOOP),
             AnimationPhase('s', 0, 15, tilemap.no_from_xy(1, 0), end=EndAction.LOOP),
@@ -137,6 +144,21 @@ class CharacterAnimation:
             AnimationPhase('walks', 15, 30, tilemap.no_from_xy(1, 2), end=EndAction.LOOP),
             AnimationPhase('walkw', 15, 30, tilemap.no_from_xy(2, 2), end=EndAction.LOOP),
             AnimationPhase('walkd', 15, 30, tilemap.no_from_xy(3, 2), end=EndAction.LOOP),
+
+            AnimationPhase('deada', 0, deadT1, tilemap.no_from_xy(0, 4)),
+            AnimationPhase('deads', 0, deadT1, tilemap.no_from_xy(1, 4)),
+            AnimationPhase('deadw', 0, deadT1, tilemap.no_from_xy(2, 4)),
+            AnimationPhase('deadd', 0, deadT1, tilemap.no_from_xy(3, 4)),
+
+            AnimationPhase('deada', deadT1, deadT2, tilemap.no_from_xy(0, 5), end=EndAction.STOP),
+            AnimationPhase('deads', deadT1, deadT2, tilemap.no_from_xy(1, 5), end=EndAction.STOP),
+            AnimationPhase('deadw', deadT1, deadT2, tilemap.no_from_xy(2, 5), end=EndAction.STOP),
+            AnimationPhase('deadd', deadT1, deadT2, tilemap.no_from_xy(3, 5), end=EndAction.STOP),
+
+            AnimationPhase('falla', 0, fallT1, tilemap.no_from_xy(0, 5), end=EndAction.IDLE),
+            AnimationPhase('falls', 0, fallT1, tilemap.no_from_xy(1, 5), end=EndAction.IDLE),
+            AnimationPhase('fallw', 0, fallT1, tilemap.no_from_xy(2, 5), end=EndAction.IDLE),
+            AnimationPhase('falld', 0, fallT1, tilemap.no_from_xy(3, 5), end=EndAction.IDLE),
 
             AnimationPhase('hita', 0, hitT1, tilemap.no_from_xy(0, 6)),
             AnimationPhase('hits', 0, hitT1, tilemap.no_from_xy(1, 6)),
@@ -166,7 +188,7 @@ class CharacterAnimation:
         if animation_state.anim_time == cap.t:
             if cap.end == EndAction.LOOP:
                 animation_state.anim_time = 0
-            elif cap.end == EndAction.LOOP:
+            elif cap.end == EndAction.STOP:
                 animation_state.anim_time -= 1
             elif cap.end == EndAction.IDLE:
                 animation_state.anim_time = 0
@@ -176,6 +198,8 @@ class CharacterAnimation:
 class BotAnimation(CharacterAnimation):
     def __init__(self, tilemap):
         assert  isinstance(tilemap, Tilemap)
+        deadT1 = 20
+        deadT2 = 40
         self.phases = [
             AnimationPhase('a', 0, 15, tilemap.no_from_xy(0, 10), end=EndAction.LOOP),
             AnimationPhase('s', 0, 15, tilemap.no_from_xy(1, 10), end=EndAction.LOOP),
@@ -191,11 +215,19 @@ class BotAnimation(CharacterAnimation):
             AnimationPhase('walks', 15, 30, tilemap.no_from_xy(1, 11), end=EndAction.LOOP),
             AnimationPhase('walkw', 15, 30, tilemap.no_from_xy(2, 11), end=EndAction.LOOP),
             AnimationPhase('walkd', 15, 30, tilemap.no_from_xy(3, 11), end=EndAction.LOOP),
+
+            AnimationPhase('deada', 0, deadT2, tilemap.no_from_xy(0, 12), end=EndAction.STOP),
+            AnimationPhase('deads', 0, deadT2, tilemap.no_from_xy(1, 12), end=EndAction.STOP),
+            AnimationPhase('deadw', 0, deadT2, tilemap.no_from_xy(2, 12), end=EndAction.STOP),
+            AnimationPhase('deadd', 0, deadT2, tilemap.no_from_xy(3, 12), end=EndAction.STOP),
+
         ]
 
 class CleanerAnimation(CharacterAnimation):
     def __init__(self, tilemap):
         assert  isinstance(tilemap, Tilemap)
+        deadT1 = 20
+        deadT2 = 40
         self.phases = [
             AnimationPhase('a', 0, 15, tilemap.no_from_xy(4, 0), end=EndAction.LOOP),
             AnimationPhase('s', 0, 15, tilemap.no_from_xy(4, 0), end=EndAction.LOOP),
@@ -211,12 +243,19 @@ class CleanerAnimation(CharacterAnimation):
             AnimationPhase('walks', 15, 30, tilemap.no_from_xy(4, 1), end=EndAction.LOOP),
             AnimationPhase('walkw', 15, 30, tilemap.no_from_xy(4, 1), end=EndAction.LOOP),
             AnimationPhase('walkd', 15, 30, tilemap.no_from_xy(4, 1), end=EndAction.LOOP),
+
+            AnimationPhase('deada', 0, deadT2, tilemap.no_from_xy(4, 2), end=EndAction.STOP),
+            AnimationPhase('deads', 0, deadT2, tilemap.no_from_xy(4, 2), end=EndAction.STOP),
+            AnimationPhase('deadw', 0, deadT2, tilemap.no_from_xy(4, 2), end=EndAction.STOP),
+            AnimationPhase('deadd', 0, deadT2, tilemap.no_from_xy(4, 2), end=EndAction.STOP),
         ]
 
 
 class BinAnimation(CharacterAnimation):
     def __init__(self, tilemap):
         assert  isinstance(tilemap, Tilemap)
+        deadT1 = 20
+        deadT2 = 40
         self.phases = [
             AnimationPhase('a', 0, 15, tilemap.no_from_xy(4, 3), end=EndAction.LOOP),
             AnimationPhase('s', 0, 15, tilemap.no_from_xy(4, 3), end=EndAction.LOOP),
@@ -232,6 +271,11 @@ class BinAnimation(CharacterAnimation):
             AnimationPhase('walks', 15, 30, tilemap.no_from_xy(4, 3), end=EndAction.LOOP),
             AnimationPhase('walkw', 15, 30, tilemap.no_from_xy(4, 3), end=EndAction.LOOP),
             AnimationPhase('walkd', 15, 30, tilemap.no_from_xy(4, 3), end=EndAction.LOOP),
+
+            AnimationPhase('deada', 0, deadT2, tilemap.no_from_xy(4, 4), end=EndAction.STOP),
+            AnimationPhase('deads', 0, deadT2, tilemap.no_from_xy(4, 4), end=EndAction.STOP),
+            AnimationPhase('deadw', 0, deadT2, tilemap.no_from_xy(4, 4), end=EndAction.STOP),
+            AnimationPhase('deadd', 0, deadT2, tilemap.no_from_xy(4, 4), end=EndAction.STOP),
         ]
 
 
@@ -287,6 +331,8 @@ class Monster(Animated):
         walking = False
         dx, dy = 0, 0
         if self.hp <= 0:
+            self.dx = 0
+            self.dy = 0
             return
 
         p = game.player
@@ -383,10 +429,16 @@ class Monster(Animated):
                     m.stun_time = self.attack_stun_time
                     m.stun_speedx = dir[0]*self.attack_stun_speed
                     m.stun_speedy = dir[1]*self.attack_stun_speed
+                    m.hp -= self.attack_damage
+                    if m.hp <= 0:
+                        d = m.anim_name[-1]
+                        m.anim_name = 'dead' + d
+                        m.anim_time = 0
 
         gnd = cell.ground
         fur = cell.furniture
         assert isinstance(gnd, GroundTile)
+        assert not fur or isinstance(fur, FurnitureTile)
         if not gnd.can_go:
             self.x, self.y = oldpos
 
@@ -395,12 +447,38 @@ class Monster(Animated):
         if self.isplayer and gnd.door_letter not in '\0\n':
             game.change_room(self.old_door_letter, gnd.door_letter)
 
+        if self.isplayer:
+            if fur and fur.name == 'umbrella' and not self.have_umbrella:
+                # assert isinstance(player, Player)
+                game.say("Nice! That will do more damage.", self.x + 32, self.y, 3 * 60)
+                fur.picked_up = True
+                self.have_umbrella = True
+                self.attack_damage = max(self.attack_damage, 10)
+            if gnd.name == 'kitchen_toaster_floor':
+                if self.talked_with_toaster == 0 and not self.have_bread:
+                    game.say("The toaster needs a bread to work.", self.x + 32, self.y, 3 * 60)
+                    self.talked_with_toaster = 1
+                if self.talked_with_toaster < 2 and self.have_bread:
+                    self.talked_with_toaster = 2
+                    game.current_title = 'toaster'
+
+            if gnd.name == 'kitchen_fridge_floor':
+                if not self.have_bread:
+                    game.say("Sliced bread here. How convenient! ", self.x + 32, self.y, 3 * 60)
+                    self.have_bread = True
+
 
 class Player(Monster):
     h = 32
     speed = 2.5
+    attack_damage = 1
     isplayer = True
     old_door_letter = ':'
+
+    have_umbrella = False
+    have_bread = False
+    talked_with_toaster = 0
+
     def __init__(self):
         self.tile = Tile()
 
@@ -480,7 +558,9 @@ class Game:
         self.monsters = [self.player]
         self.phrases = []
         self.transfers = {}
+        self.visited_rooms = {'vi':True}
         self.current_title = 'start'
+        self.win_timeout = 60 * 3
 
         def add_tile(name, x, y,
                      can_go=True,
@@ -530,7 +610,10 @@ class Game:
         add_tile('blue_floor', 12, 2)
         add_tile('textured_floor', 15, 3)
         add_tile('gray_floor', 14, 1)
-        add_tile('kitchen_furniture', 13, 6)
+        add_tile('kitchen_furniture', 13, 6, can_go=False, can_fly=False)
+        add_tile('kitchen_toaster', 12, 6, can_go=False, can_fly=False)
+        add_tile('kitchen_toaster_floor', 12, 7)
+        add_tile('kitchen_fridge_floor', 11, 7)
         add_tile('asphalt', 9, 0)
         add_tile('gray_floor2', 14, 0)
         add_tile('grass', 13, 1)
@@ -562,23 +645,23 @@ class Game:
         m.y = y
         if gid == 5: # cleaner
             m.animation = self.cleaner_animation
-            m.hp = 20
+            m.hp = 10
             m.h = 10
             m.speed = 1.2
             m.sense_range = 32 * 5
-        elif gid == 69: # bin
-            m.animation = self.bin_animation
-            m.hp = 20
-            m.h = 10
-            m.speed = 0.7
-            m.sense_range = 32 * 6
         elif gid == 161: # bot
             m.animation = self.bot_animation
             m.h = 20
-            m.hp = 20
+            m.hp = 200
             m.speed = 0.5
             m.sense_range = 32 * 5
-        elif gid == 53: # dead bin
+        elif gid == 53: # bin
+            m.animation = self.bin_animation
+            m.hp = 1
+            m.h = 10
+            m.speed = 0.7
+            m.sense_range = 32 * 6
+        elif gid == 69: # dead bin
             m.animation = self.bin_animation
             m.h = 10
             m.hp = 0
@@ -638,6 +721,8 @@ class Game:
                 self.monsters.append(m)
         # =======================================
         start_room = self.rooms['entrance']
+        start_room = self.rooms['kitchen']
+
         self.current_room = start_room
         self.player.x = start_room.ex
         self.player.y = start_room.ey
@@ -662,7 +747,7 @@ class Game:
         'mhhikm mg  ',  # e |
         'h   A      ',  # i |
         '3Ch Bm   f ',  # o | OLD
-        'hg   3E    ',  # m |
+        'hg   gE    ',  # m |
         'h 3  Dl    ',  # n |
         'R m l     W',  # q
         '  m i  W   ',  # w
@@ -693,6 +778,8 @@ class Game:
         new_room_name = short_names.get(new_room_sname, 'entrance')
 
         print('change_room', repr(old), repr(new), '->', new_room_name)
+        self.visited_rooms[new_room_name] = True
+        print('visited rooms' , len(self.visited_rooms.keys()))
 
         start_room = self.rooms[new_room_name]
 
@@ -716,6 +803,7 @@ class Game:
             'warehouse->vi': "Yes! Done!",
             'office2->office3': "Am I lost?",
             'maintenance->basement': "A-a-aa!! Damned lift!",
+            'construction1->garden': "A-a-aa!! Damned construction!",
         }
         transfer_phrases2 = {
             'hall->information': "Welcome to Facility VI.\n"
@@ -733,6 +821,14 @@ class Game:
         transfer_accidents = {
         #    '' -> 'fall',
         }
+        print (repr(transfer))
+        if transfer in ['maintenance->basement', 'construction1->garden']:
+            #print('Dangerous path!!')
+            self.player.anim_time = 0
+            self.player.anim_name = 'falls'
+            self.player.stun_time = 120
+            self.player.stun_speedx = 0
+            self.player.stun_speedy = 0
 
         if transfer not in self.transfers:
             print(transfer)
@@ -766,7 +862,20 @@ class Game:
         self.phrases.append(p)
         self.phrases = [p for p in self.phrases if p.ttl > 0]
 
+
     def win_condition(self, no):
+        if no == 0:
+            return True
+        elif no == 1:
+            return len(self.visited_rooms) >= 15
+        elif no == 2:
+            return self.player.talked_with_toaster == 2
+        elif no == 3:
+            fall1 = 'maintenance->basement' in self.transfers
+            fall2 = 'construction1->garden' in self.transfers
+            return fall1 and fall2
+
+    def win_condition_debug(self, no):
         if no == 0:
             return not keys_down.get(pygame.K_0)
         elif no == 1:
@@ -783,13 +892,39 @@ class Game:
             self.current_title = 'about'
 
         cy = [10]
-        light_pink =pygame.Color(255, 221, 186, 255)
-        def draw_menu_line(text, ox = 40):
+        light_pink = pygame.Color(255, 221, 186, 255)
+        toaster_color = pygame.Color(227, 184, 110, 255)
+        player_color = pygame.Color(255, 128, 10, 255)
+
+        def draw_menu_line(text, ox = 40, color=None):
             cy[0] += 26
             balloon.draw_text(text,
                               ox,
                               cy[0],
-                              bgcolor=light_pink)
+                              bgcolor=color or light_pink)
+
+        def draw_toaster_line(text):
+            draw_menu_line(text, ox=60, color=toaster_color)
+
+        def draw_player_line(text):
+            draw_menu_line(text, ox=20, color=player_color)
+
+        if self.current_title == 'toaster':
+            draw_player_line('Hi, toaster!')
+            draw_toaster_line('Hello there! You know it is boring to be a toaster.')
+            draw_toaster_line('Especially when my boss decided to fire all employees.')
+            draw_menu_line('')
+            draw_player_line('Why equipment here tries to kill me?')
+            draw_toaster_line('The order was to fire all humans.')
+            draw_toaster_line('They have military chips installed so they just misunderstand it.')
+            draw_toaster_line("I'll tell my boss about it.")
+            draw_menu_line('')
+            draw_player_line('Thank you, toaster!')
+            draw_toaster_line('Good luck.')
+            draw_menu_line('')
+            draw_menu_line('')
+
+            draw_menu_line('Press Enter to continue.')
 
         if self.current_title == 'start':
             draw_menu_line('Facility VI')
@@ -817,6 +952,7 @@ class Game:
             draw_menu_line('Music by ...')
             draw_menu_line('')
             draw_menu_line('Using font SquareGrotesk by Natanael Gama')
+            draw_menu_line('Press Enter to continue.')
 
         elif self.current_title == 'end':
             if not self.win_condition(0):
@@ -898,6 +1034,12 @@ class Game:
         if keys_down.get(pygame.K_F2):
             self.current_title = 'about'
 
+        if self.current_room.name == 'vi':
+            self.win_timeout -= 1
+            if self.win_timeout <= 0:
+                self.current_title = 'end'
+                self.win_timeout = 60*10
+
         self.tilemap.start_draw()
         for i in range(16):
             for j in range(10):
@@ -909,7 +1051,7 @@ class Game:
                 #if not cell.marked:
                 self.tilemap.draw(cell.ground,
                                   a, b)
-                if cell.furniture:
+                if cell.furniture and not cell.furniture.picked_up:
                     self.tilemap.draw(cell.furniture,
                                   a, b)
 

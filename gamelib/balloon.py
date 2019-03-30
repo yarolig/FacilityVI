@@ -29,7 +29,7 @@ def draw_text(text, x, y, bgcolor=None):
                        text,
                        bgcolor=bgcolor,
                        fgcolor=pygame.Color('black'))
-        print('rect', rect)
+        #print('rect', rect)
         s = ''
 
         for i in range(100):
@@ -41,7 +41,7 @@ def draw_text(text, x, y, bgcolor=None):
                 else:
                     s+='.'
             s+='\n'
-        print(s)
+        #print(s)
         data = pygame.image.tostring(surface, "RGBA", 1)
 
         width = surface.get_width()
@@ -54,8 +54,8 @@ def draw_text(text, x, y, bgcolor=None):
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA,
                      GL_UNSIGNED_BYTE, data)
 
-        print(id, width, height)
-        print(font)
+        #print(id, width, height)
+        #print(font)
         text_textures[text] = id
     else:
         glBindTexture(GL_TEXTURE_2D, text_textures[text])
