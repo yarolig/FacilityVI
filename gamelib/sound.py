@@ -8,8 +8,10 @@ class Sounds:
         self.hit_hand = pygame.mixer.Sound('data/sound/hit_hand.wav')
         self.hit_umbrella = pygame.mixer.Sound('data/sound/hit_medium_ubrella.wav')
         self.hit_large = pygame.mixer.Sound('data/sound/hit_large.wav')
-        self.miss = pygame.mixer.Sound('data/sound/miss2.wav')
+        self.miss = pygame.mixer.Sound('data/sound/miss.wav')
+        self.miss2 = pygame.mixer.Sound('data/sound/miss2.wav')
         self.fall = pygame.mixer.Sound('data/sound/fall.wav')
+        self.pickup = pygame.mixer.Sound('data/sound/pickup.wav')
 
     def play(self, name):
         if name == 'hand':
@@ -20,6 +22,8 @@ class Sounds:
             self.hit_large.play()
         if name == 'miss':
             self.miss.play()
+        if name == 'pickup':
+            self.pickup.play()
         if name == 'fall':
             self.fall.play()
 

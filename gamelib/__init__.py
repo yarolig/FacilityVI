@@ -468,6 +468,7 @@ class Monster(Animated):
                 fur.picked_up = True
                 self.have_umbrella = True
                 self.attack_damage = max(self.attack_damage, 10)
+                sounds.play('pickup')
             if gnd.name == 'kitchen_toaster_floor':
                 if self.talked_with_toaster == 0 and not self.have_bread:
                     game.say("The toaster needs a bread to work.", self.x + 32, self.y, 3 * 60)
@@ -741,7 +742,7 @@ class Game:
         # =======================================
         start_room = self.rooms['entrance']
         start_room = self.rooms['kitchen']
-        #start_room = self.rooms['vi']
+        start_room = self.rooms['vi']
 
         self.current_room = start_room
         self.player.x = start_room.ex
