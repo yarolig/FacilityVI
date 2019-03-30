@@ -2,7 +2,7 @@
 import json
 from .texture import *
 from .keys import *
-
+from .sound import *
 
 from OpenGL.GL import *
 from OpenGL.GLU import *
@@ -414,7 +414,10 @@ class Monster(Animated):
         cell = game.get_cell_for_pxpy(self.x, self.y)
         # print (cell, cell.ground)
 
-        if self.anim_name.startswith('hit') and self.anim_time == 5:
+
+
+        if self.anim_name.startswith('hit') and self.anim_time in (0,5):
+            sound_to_play = 'miss'
             l2d={'w':(0,-1), 's':(0,1), 'a':(-1,0), 'd':(1,0), }
             dir = l2d[self.anim_name[-1]]
             x = self.x + dir[0]*self.attack_range
@@ -426,14 +429,25 @@ class Monster(Animated):
                     continue
                 if rect_intersect(x, y, 32, self.h, m.x, m.y, 32, m.h):
                     # hit monster
-                    m.stun_time = self.attack_stun_time
-                    m.stun_speedx = dir[0]*self.attack_stun_speed
-                    m.stun_speedy = dir[1]*self.attack_stun_speed
-                    m.hp -= self.attack_damage
-                    if m.hp <= 0:
-                        d = m.anim_name[-1]
-                        m.anim_name = 'dead' + d
-                        m.anim_time = 0
+                    if sound_to_play != 'large':
+                        if game.player.have_umbrella:
+                            sound_to_play = 'umbrella'
+                        else:
+                            sound_to_play = 'hand'
+                        if m.hp > 50:
+                            sound_to_play = 'large'
+                    if self.anim_time == 5:
+                        m.stun_time = self.attack_stun_time
+                        m.stun_speedx = dir[0]*self.attack_stun_speed
+                        m.stun_speedy = dir[1]*self.attack_stun_speed
+                        m.hp -= self.attack_damage
+                        if m.hp <= 0:
+                            d = m.anim_name[-1]
+                            m.anim_name = 'dead' + d
+                            m.anim_time = 0
+            if self.isplayer:
+                if self.anim_time == 0:
+                    sounds.play(sound_to_play)
 
         gnd = cell.ground
         fur = cell.furniture
@@ -527,6 +541,7 @@ class Player(Monster):
                 direction = self.anim_name[-1]
                 self.anim_time = 0
                 self.anim_name = 'hit'+direction
+            #sounds.play('miss')
 
         self.dx = dx
         self.dy = dy
@@ -640,6 +655,8 @@ class Game:
 
         self.load('')
         balloon.init()
+        sound.init_sound()
+
 
     def create_monster(self, x, y, gid):
         m = Monster()
@@ -724,7 +741,7 @@ class Game:
         # =======================================
         start_room = self.rooms['entrance']
         start_room = self.rooms['kitchen']
-        start_room = self.rooms['vi']
+        #start_room = self.rooms['vi']
 
         self.current_room = start_room
         self.player.x = start_room.ex
@@ -780,7 +797,7 @@ class Game:
         new_room_sname = transits[oi][ni]
         new_room_name = short_names.get(new_room_sname, 'entrance')
 
-        print('change_room', repr(old), repr(new), '->', new_room_name,
+        print('change_room', repr(old), repr(new), '->', new_room_name, ',',
               'visited rooms', len(self.visited_rooms.keys()))
         self.visited_rooms[new_room_name] = True
         start_room = self.rooms[new_room_name]
@@ -836,12 +853,13 @@ class Game:
             self.player.stun_time = 120
             self.player.stun_speedx = 0
             self.player.stun_speedy = 0
+            sounds.play('fall')
 
         if transfer not in self.transfers:
             #print(transfer)
             t = transfer_phrases.get(transfer, '')
             if t:
-                print('say', t)
+                print('say:', t)
                 self.say(t, self.player.x + 32, self.player.y, 3 * 60)
             t2 = transfer_phrases2.get(transfer, '')
             if t2:
@@ -945,8 +963,8 @@ class Game:
             draw_menu_line('')
             draw_menu_line('')
             draw_menu_line('')
-            draw_menu_line('Press Enter to continue.')
             draw_menu_line('Press F1 in game to see controls.')
+            draw_menu_line('Press Enter to continue.')
         elif self.current_title == 'about':
             draw_menu_line('Facility VI - the game about exiting')
             draw_menu_line('from confusing and highly automated facility')

@@ -50,4 +50,5 @@ def main():
         pygame.display.flip()
 
 if __name__ == '__main__':
+    pygame.mixer.pre_init(frequency=44100, buffer=512)
     main()
