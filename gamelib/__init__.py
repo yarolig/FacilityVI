@@ -471,7 +471,7 @@ class Monster(Animated):
                 sounds.play('pickup')
             if gnd.name == 'kitchen_toaster_floor':
                 if self.talked_with_toaster == 0 and not self.have_bread:
-                    game.say("The toaster needs a bread to work.", self.x + 32, self.y, 3 * 60)
+                    game.say("The toaster needs bread to work.", self.x + 32, self.y, 3 * 60)
                     self.talked_with_toaster = 1
                 if self.talked_with_toaster < 2 and self.have_bread:
                     self.talked_with_toaster = 2
