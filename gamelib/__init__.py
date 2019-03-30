@@ -475,6 +475,8 @@ class Game:
         self.monsters = [self.player]
         self.phrases = []
         self.transfers = {}
+        self.current_title = 'start'
+
         def add_tile(name, x, y,
                      can_go=True,
                      can_fly=True,
@@ -629,6 +631,7 @@ class Game:
                                         int(o['y']) - 32,
                                         int(o['gid']))
                 self.monsters.append(m)
+        # =======================================
         start_room = self.rooms['entrance']
         self.current_room = start_room
         self.player.x = start_room.ex
@@ -711,14 +714,14 @@ class Game:
         }
         transfer_phrases2 = {
             'hall->information': "Welcome to Facility VI.\n"
-                                 "To exit  1) go to fire ESCAPE door\n"
-                                 "2) take LIFT to waste treatment area\n"
+                                 "To exit  1) go to a fire ESCAPE door\n"
+                                 "2) take a LIFT to waste treatment area\n"
                                  "3) go to the QUALITY control room\n"
-                                 "4) leave through the door with YELLOW SIGN!\n",
+                                 "4) leave through the door with a YELLOW SIGN!\n",
 
             'fridge->information': "It is very logical indeed.\n"
-                                   "Nothing depends on room where you been.\n"
-                                   "Only doors matter.\n"
+                                   "Nothing depends on the room where you been.\n"
+                                   "Only the doors matter.\n"
                                    "The last two doors you passed.\n"
 
         }
@@ -758,6 +761,111 @@ class Game:
         self.phrases.append(p)
         self.phrases = [p for p in self.phrases if p.ttl > 0]
 
+    def win_condition(self, no):
+        if no == 0:
+            return not keys_down.get(pygame.K_0)
+        elif no == 1:
+            return keys_down.get(pygame.K_1)
+        elif no == 2:
+            return keys_down.get(pygame.K_2)
+        elif no == 3:
+            return keys_down.get(pygame.K_3)
+
+    def draw_title(self):
+        if keys_down.get(pygame.K_F1):
+            self.current_title = 'controls'
+        if keys_down.get(pygame.K_F2):
+            self.current_title = 'about'
+
+        cy = [10]
+        light_pink =pygame.Color(255, 221, 186, 255)
+        def draw_menu_line(text, ox = 40):
+            cy[0] += 26
+            balloon.draw_text(text,
+                              ox,
+                              cy[0],
+                              bgcolor=light_pink)
+
+        if self.current_title == 'start':
+            draw_menu_line('Facility VI')
+            draw_menu_line('')
+            draw_menu_line('')
+            draw_menu_line('')
+            draw_menu_line('')
+            draw_menu_line('')
+            draw_menu_line('')
+            draw_menu_line('')
+            draw_menu_line('')
+            draw_menu_line('Press Enter to continue.')
+            draw_menu_line('Press F1 in game to see controls.')
+        elif self.current_title == 'about':
+            draw_menu_line('Facility VI - the game about exiting')
+            draw_menu_line('from confusing and highly automated facility')
+            draw_menu_line('')
+            draw_menu_line('pyweek27 solo entry by Alexander Izmailov')
+            draw_menu_line('http://www.pyweek.org/27/')
+            draw_menu_line('')
+            draw_menu_line('Code is distributed under the terms of MIT License')
+            draw_menu_line('')
+            draw_menu_line('Tileset is based on RPG Urban Pack from kenney.nl')
+            draw_menu_line('')
+            draw_menu_line('Music by ...')
+            draw_menu_line('')
+            draw_menu_line('Using font SquareGrotesk by Natanael Gama')
+
+        elif self.current_title == 'end':
+            if not self.win_condition(0):
+                draw_menu_line('You are lost in the Facility VI')
+            else:
+                draw_menu_line('You escaped from Facility VI!')
+                draw_menu_line('')
+                if self.win_condition(1):
+                    draw_menu_line('You have made a good map, which was used by')
+                    draw_menu_line(' other curious visitors.')
+                    draw_menu_line('')
+                else:
+                    draw_menu_line('Continue to come news about people lost')
+                    draw_menu_line('in the twisted passages of facility.')
+                    draw_menu_line('')
+                if self.win_condition(2):
+                    draw_menu_line('Equipment in the facility is friendly now.')
+                    draw_menu_line('')
+                else:
+                    draw_menu_line('Mad robots began to get out of the factory')
+                    draw_menu_line('and attack all around.')
+                    draw_menu_line('Soon around the exits built a fence.')
+                    draw_menu_line('')
+
+                if self.win_condition(1) and self.win_condition(2):
+                    draw_menu_line('New visitors explored the facility')
+                    draw_menu_line('and this map is hanging on every door.')
+                    draw_menu_line('')
+                    if not self.win_condition(3):
+                        draw_menu_line('Some areas still have a danger to visitors.')
+                    else:
+                        draw_menu_line('You have gone through all the dangerous')
+                        draw_menu_line('paths that are now closed.')
+                        draw_menu_line('')
+
+                        draw_menu_line('Congratulations!')
+                        draw_menu_line('You discovered all available secrets of Facility VI')
+                        draw_menu_line('')
+                else:
+                    if self.win_condition(3):
+                        draw_menu_line('All the accidents here happened to you.')
+
+        elif self.current_title == 'controls':
+            draw_menu_line('Controls')
+            draw_menu_line('')
+            draw_menu_line('WSAD, HJKL, Arrows - move')
+            draw_menu_line('K, Ctrl - attack (do not expect too much)')
+            draw_menu_line('M - toggle music')
+            draw_menu_line('N - toggle sound')
+            draw_menu_line('F1 - show controls')
+            draw_menu_line('Esc - exit')
+            draw_menu_line('')
+            draw_menu_line('Press Enter to continue.')
+
     def draw(self):
         glClearColor(0.56, 0.66, 0.79, 1.0)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
@@ -770,6 +878,19 @@ class Game:
 
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+
+        if self.current_title:
+            self.draw_title()
+            if keys_down.get(pygame.K_RETURN):
+                self.current_title = ''
+            return
+
+        if keys_down.get(pygame.K_F6):
+            self.current_title = 'end'
+        if keys_down.get(pygame.K_F1):
+            self.current_title = 'controls'
+        if keys_down.get(pygame.K_F2):
+            self.current_title = 'about'
 
         self.tilemap.start_draw()
         for i in range(16):

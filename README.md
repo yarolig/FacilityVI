@@ -36,4 +36,9 @@ Modificaions: Character in urban.png is based on the character from RPG Urban Pa
 Source: https://kenney.nl/assets/rpg-urban-pack  
 License: CC0 1.0 Universal (https://creativecommons.org/publicdomain/zero/1.0/)  
 
+#### Square Grotesk font
+File: SquareGrotesk-Regular.otf  
+Source: https://fontlibrary.org/en/font/square-grotesk  
+License: SIL Open Font License (OFL)  http://scripts.sil.org/OFL  
+
 
