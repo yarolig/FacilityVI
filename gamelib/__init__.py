@@ -482,6 +482,12 @@ class Monster(Animated):
                     game.say("Sliced bread here. How convenient! ", self.x + 32, self.y, 3 * 60)
                     self.have_bread = True
 
+            if gnd.name == 'textured_floor_with_paper':
+                if not self.have_lift_message:
+                    self.have_lift_message = True
+                    game.current_title = 'lift_message'
+
+
 
 class Player(Monster):
     h = 32
@@ -492,6 +498,7 @@ class Player(Monster):
 
     have_umbrella = False
     have_bread = False
+    have_lift_message = False
     talked_with_toaster = 0
 
     def __init__(self):
@@ -632,6 +639,7 @@ class Game:
         add_tile('kitchen_toaster', 12, 6, can_go=False, can_fly=False)
         add_tile('kitchen_toaster_floor', 12, 7)
         add_tile('kitchen_fridge_floor', 11, 7)
+        add_tile('textured_floor_with_paper', 11, 3)
         add_tile('asphalt', 9, 0)
         add_tile('gray_floor2', 14, 0)
         add_tile('grass', 13, 1)
@@ -766,7 +774,7 @@ class Game:
         'hhmiAD qw  ',  # :
         '3hhiA      ',  # a
         'mhhikE mg  ',  # e |
-        'h   A      ',  # i |
+        'hg  A      ',  # i |
         '3Ch Bm   f ',  # o | OLD
         'hh   gE    ',  # m |
         'h 3  Dl    ',  # n |
@@ -817,9 +825,8 @@ class Game:
             'hall->maintenance': "Looks like a waste treatment area!",
             'maintenance->maintenance': "Whoops!",
             '3rd->3rd': 'What?',
-            '3rd->construction1' : 'These rooms is under construction.',
-            #'maintenance->maintenance': "Whoops!",
-            'fridge->information': "This is INSANE!! I've been in the kithen! WHY AM I HERE?",
+            '3rd->construction1' : 'These rooms are under construction.',
+            'fridge->information': "This is INSANE!! I've been in the kitchen! WHY AM I HERE?",
             'quality->vi' : "Yes! I'm free now!",
             'warehouse->vi': "Yes! Done!",
             'office2->office3': "Am I lost?",
@@ -923,6 +930,7 @@ class Game:
         light_pink = pygame.Color(255, 221, 186, 255)
         toaster_color = pygame.Color(227, 184, 110, 255)
         player_color = pygame.Color(255, 128, 10, 255)
+        paper_color = pygame.Color(255, 254, 220, 255)
 
         def draw_menu_line(text, ox = 40, color=None):
             cy[0] += 26
@@ -936,6 +944,9 @@ class Game:
 
         def draw_player_line(text):
             draw_menu_line(text, ox=20, color=player_color)
+
+        def draw_paper_line(text):
+            draw_menu_line(text, ox=20, color=paper_color)
 
         if self.current_title == 'toaster':
             draw_player_line('Hi, toaster!')
@@ -954,14 +965,28 @@ class Game:
 
             draw_menu_line('Press Enter to continue.')
 
+        if self.current_title == 'lift_message':
+            draw_paper_line('Lift do not work well when calling')
+            draw_paper_line('it right after visiting Quality Control')
+            draw_paper_line('')
+            draw_paper_line('Please check it.')
+            draw_paper_line('')
+            draw_paper_line('')
+            draw_paper_line('')
+
+            draw_menu_line('Press Enter to continue.')
+
         if self.current_title == 'start':
-            draw_menu_line('Facility VI')
+            draw_menu_line('Facility VI', ox=200)
             draw_menu_line('')
+            draw_menu_line('Facility VI is known for its work on various research,')
+            draw_menu_line('automation and poverty reduction. Unusual things have')
+            draw_menu_line('been happening lately. All employees were dismissed,')
+            draw_menu_line('but the plant continues to work. Rumor has it that ')
+            draw_menu_line('the people trying to get inside are missing.')
             draw_menu_line('')
-            draw_menu_line('')
-            draw_menu_line('')
-            draw_menu_line('')
-            draw_menu_line('')
+            draw_menu_line('You are one of the curious people want to know')
+            draw_menu_line('what is going on there.')
             draw_menu_line('')
             draw_menu_line('')
             draw_menu_line('Press F1 in game to see controls.')
@@ -977,7 +1002,7 @@ class Game:
             draw_menu_line('')
             draw_menu_line('Tileset is based on RPG Urban Pack from kenney.nl')
             draw_menu_line('')
-            draw_menu_line('Music by ...')
+            draw_menu_line('Music by Parallel Park')
             draw_menu_line('')
             draw_menu_line('Using font SquareGrotesk by Natanael Gama')
             draw_menu_line('Press Enter to continue.')
@@ -1037,7 +1062,9 @@ class Game:
             draw_menu_line('Press Enter to continue.')
 
     def draw(self):
-        glClearColor(0.56, 0.66, 0.79, 1.0)
+        #glClearColor(0.56, 0.66, 0.79, 1.0)
+        glClearColor(1.0, 0.86, 0.73, 1.0)
+
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()

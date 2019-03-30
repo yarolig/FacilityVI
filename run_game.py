@@ -11,6 +11,7 @@ import pygame.freetype
 
 import gamelib
 
+
 import os
 import sys
 
@@ -30,6 +31,7 @@ def main():
                             pygame.OPENGL |
                             pygame.RESIZABLE |
                             pygame.DOUBLEBUF)
+    pygame.display.set_caption('Facility VI - pyweek27')
     game.init()
     while True:
         for event in pygame.event.get():
@@ -40,6 +42,10 @@ def main():
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     return
+                if event.key == pygame.K_m:
+                    gamelib.sounds.toggle_music()
+                if event.key == pygame.K_n:
+                    gamelib.sounds.toggle_sound()
 
             if event.type == pygame.KEYUP:
                 keys_down[event.key] = False
