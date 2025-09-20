@@ -8,6 +8,7 @@ import pygame.freetype
 import pygame.mixer
 import pygame.image
 import pygame.freetype
+import pygame.time
 
 import gamelib
 
@@ -20,6 +21,8 @@ from OpenGL.GLU import *
 from pygame.display import  *
 from gamelib.texture import *
 from gamelib.keys import *
+clock = pygame.time.Clock()
+
 
 game = gamelib.Game()
 
@@ -53,6 +56,7 @@ def main():
             if event.type == pygame.KEYDOWN:
                 keys_down[event.key] = True
         game.draw()
+        clock.tick(60)
         pygame.display.flip()
 
 if __name__ == '__main__':
